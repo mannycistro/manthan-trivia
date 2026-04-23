@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 interface Props {
   categories: Category[];
   usedTileIds: Set<string>;
+  currency: string;
   onTileClick: (categoryId: string, questionId: string) => void;
   onCategoryRename: (categoryId: string, title: string) => void;
   editMode: boolean;
@@ -12,6 +13,7 @@ interface Props {
 export function GameBoard({
   categories,
   usedTileIds,
+  currency,
   onTileClick,
   onCategoryRename,
   editMode,
@@ -59,7 +61,7 @@ export function GameBoard({
               aria-label={`${cat.title} for ${q.value}`}
             >
               <span className="text-2xl md:text-5xl text-shadow-jeopardy">
-                {used ? "" : `$${q.value}`}
+                {used ? "" : `${currency}${q.value}`}
               </span>
             </button>
           );

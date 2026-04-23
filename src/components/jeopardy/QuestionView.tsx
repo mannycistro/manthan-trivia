@@ -9,6 +9,8 @@ interface Props {
   category: Category;
   question: Question;
   soundEnabled: boolean;
+  currency: string;
+  timerSeconds: number;
   onBack: () => void;
 }
 
@@ -27,7 +29,7 @@ function youtubeEmbedUrl(url: string): string | null {
   return null;
 }
 
-export function QuestionView({ category, question, soundEnabled, onBack }: Props) {
+export function QuestionView({ category, question, soundEnabled, currency, timerSeconds, onBack }: Props) {
   const [revealed, setRevealed] = useState(false);
 
   const reveal = () => {
@@ -92,10 +94,10 @@ export function QuestionView({ category, question, soundEnabled, onBack }: Props
             {category.title}
           </span>
           <span className="font-display text-3xl md:text-4xl gold-gradient">
-            ${question.value}
+            {currency}{question.value}
           </span>
         </div>
-        <QuestionTimer initialSeconds={30} />
+        <QuestionTimer initialSeconds={timerSeconds} />
       </div>
 
       {/* Main panel */}

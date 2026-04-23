@@ -11,6 +11,12 @@ export function QuestionTimer({ initialSeconds = 30 }: Props) {
   const [running, setRunning] = useState(false);
   const ref = useRef<number | null>(null);
 
+  // Reset when the configured duration changes (e.g. user updates settings)
+  useEffect(() => {
+    setSeconds(initialSeconds);
+    setRunning(false);
+  }, [initialSeconds]);
+
   useEffect(() => {
     if (running && seconds > 0) {
       ref.current = window.setTimeout(() => setSeconds((s) => s - 1), 1000);
@@ -28,6 +34,8 @@ export function QuestionTimer({ initialSeconds = 30 }: Props) {
   };
 
   const danger = seconds <= 5 && seconds > 0;
+
+  if (initialSeconds <= 0) return null;
 
   return (
     <div className="flex items-center gap-3 bg-card/80 border-2 border-border rounded-xl px-4 py-2">
