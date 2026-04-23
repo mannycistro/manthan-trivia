@@ -33,6 +33,9 @@ interface Props {
   onDeleteModule: (id: string) => void;
 }
 
+const NONE_VALUE = "__none__";
+const CUSTOM_VALUE = "__custom__";
+
 const CURRENCY_PRESETS = [
   { value: "$", label: "$ — US Dollar" },
   { value: "€", label: "€ — Euro" },
@@ -44,9 +47,13 @@ const CURRENCY_PRESETS = [
   { value: "R$", label: "R$ — Real" },
   { value: "kr", label: "kr — Krona" },
   { value: "pts", label: "pts — Points (suffix)" },
-  { value: "", label: "(none — number only)" },
-  { value: "__custom__", label: "Custom…" },
+  { value: NONE_VALUE, label: "(none — number only)" },
+  { value: CUSTOM_VALUE, label: "Custom…" },
 ];
+
+const PRESET_VALUES = new Set(
+  CURRENCY_PRESETS.map((p) => p.value).filter((v) => v !== CUSTOM_VALUE && v !== NONE_VALUE)
+);
 
 export function SettingsDialog({
   open,
@@ -59,11 +66,18 @@ export function SettingsDialog({
   onDeleteModule,
 }: Props) {
   const [moduleName, setModuleName] = useState("");
-  const isPreset = CURRENCY_PRESETS.some(
-    (p) => p.value === settings.currency && p.value !== "__custom__"
+  const isPreset = PRESET_VALUES.has(settings.currency);
+  const isNone = settings.currency === "";
+  const [customMode, setCustomMode] = useState(!isPreset && !isNone);
+  const [customCurrency, setCustomCurrency] = useState(
+    !isPreset && !isNone ? settings.currency : ""
   );
-  const [customMode, setCustomMode] = useState(!isPreset);
-  const [customCurrency, setCustomCurrency] = useState(isPreset ? "" : settings.currency);
+
+  const selectValue = customMode
+    ? CUSTOM_VALUE
+    : isNone
+    ? NONE_VALUE
+    : settings.currency;
 
   const handleSave = () => {
     const name = moduleName.trim();
@@ -95,11 +109,14 @@ export function SettingsDialog({
             </p>
             <div className="flex gap-2">
               <Select
-                value={customMode ? "__custom__" : settings.currency}
+                value={selectValue}
                 onValueChange={(v) => {
-                  if (v === "__custom__") {
+                  if (v === CUSTOM_VALUE) {
                     setCustomMode(true);
                     onUpdateSettings({ currency: customCurrency });
+                  } else if (v === NONE_VALUE) {
+                    setCustomMode(false);
+                    onUpdateSettings({ currency: "" });
                   } else {
                     setCustomMode(false);
                     onUpdateSettings({ currency: v });
@@ -111,7 +128,7 @@ export function SettingsDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {CURRENCY_PRESETS.map((p) => (
-                    <SelectItem key={p.value || "none"} value={p.value || " "}>
+                    <SelectItem key={p.value} value={p.value}>
                       {p.label}
                     </SelectItem>
                   ))}
