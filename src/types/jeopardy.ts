@@ -6,13 +6,13 @@ export interface Question {
   question: string;
   answer: string;
   mediaType: MediaType;
-  mediaUrl?: string; // data URL for uploads OR external URL (YouTube, etc.)
+  mediaUrl?: string;
 }
 
 export interface Category {
   id: string;
   title: string;
-  questions: Question[]; // length 5
+  questions: Question[];
 }
 
 export interface Team {
@@ -22,14 +22,26 @@ export interface Team {
 }
 
 export interface GameSettings {
-  currency: string; // e.g. "$", "€", "£", "¥", "₹", "" (none), or custom
-  timerSeconds: number; // per-question timer duration
+  currency: string;
+  timerSeconds: number;
+}
+
+export interface Round {
+  id: string;
+  name: string;
+  rows: number;
+  cols: number;
+  baseValue: number;
+  valueStep: number;
+  categories: Category[]; // length === cols, each with `rows` questions
+  usedTileIds: string[];
 }
 
 export interface GameState {
-  categories: Category[];
+  gameName: string;
+  rounds: Round[];
+  activeRoundIndex: number;
   teams: Team[];
-  usedTileIds: string[];
   soundEnabled: boolean;
   settings: GameSettings;
 }
@@ -38,6 +50,7 @@ export interface SavedGameModule {
   id: string;
   name: string;
   savedAt: number;
-  categories: Category[];
+  gameName: string;
+  rounds: Round[];
   settings: GameSettings;
 }

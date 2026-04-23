@@ -74,13 +74,28 @@
     @apply bg-background text-foreground;
     background: var(--gradient-bg);
     min-height: 100vh;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'ITC Korinna', 'Korinna', 'Bookman Old Style', 'Bitter', Georgia, serif;
   }
 
   .font-display {
-    font-family: 'Georgia', 'Times New Roman', serif;
-    font-weight: 800;
-    letter-spacing: 0.02em;
+    font-family: 'ITC Korinna', 'Korinna', 'Bookman Old Style', 'Bitter', Georgia, serif;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+}
+
+@layer utilities {
+  .tile-text {
+    font-size: clamp(0.85rem, 2.2vw, 2.75rem);
+    line-height: 1.05;
+  }
+  .tile-value {
+    font-size: clamp(1.1rem, 3.2vw, 3.5rem);
+    line-height: 1;
+  }
+  .auto-shrink {
+    font-size: clamp(1.25rem, 3.2vw, 3rem);
+    line-height: 1.15;
   }
 }
 
