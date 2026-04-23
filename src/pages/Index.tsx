@@ -1,13 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
-import { Category, GameSettings, GameState, Question, SavedGameModule, Team } from "@/types/jeopardy";
-import { defaultCategories, defaultTeams } from "@/lib/defaultGame";
+import {
+  GameSettings,
+  GameState,
+  Question,
+  Round,
+  SavedGameModule,
+} from "@/types/jeopardy";
+import {
+  defaultRounds,
+  defaultTeams,
+  makeRound,
+  resizeRound,
+  rescaleRoundValues,
+} from "@/lib/defaultGame";
 import { GameBoard } from "@/components/jeopardy/GameBoard";
 import { QuestionView } from "@/components/jeopardy/QuestionView";
 import { Scoreboard } from "@/components/jeopardy/Scoreboard";
 import { EditPanel } from "@/components/jeopardy/EditPanel";
 import { SettingsDialog } from "@/components/jeopardy/SettingsDialog";
+import { RoundSwitcher } from "@/components/jeopardy/RoundSwitcher";
 import { Button } from "@/components/ui/button";
-import { Pencil, Settings as SettingsIcon, Volume2, VolumeX } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Pencil, Settings as SettingsIcon, Volume2, VolumeX, Check } from "lucide-react";
 import { sounds } from "@/lib/sounds";
 import { toast } from "sonner";
 
@@ -19,16 +33,49 @@ const DEFAULT_SETTINGS: GameSettings = {
   timerSeconds: 30,
 };
 
+function migrateRounds(parsed: any): Round[] | null {
+  if (Array.isArray(parsed?.rounds) && parsed.rounds.length > 0) {
+    return parsed.rounds.map((r: any, i: number) => ({
+      id: r.id ?? `r-mig-${i}`,
+      name: r.name ?? `Round ${i + 1}`,
+      rows: r.rows ?? r.categories?.[0]?.questions?.length ?? 5,
+      cols: r.cols ?? r.categories?.length ?? 5,
+      baseValue: r.baseValue ?? 100,
+      valueStep: r.valueStep ?? 100,
+      categories: r.categories ?? [],
+      usedTileIds: r.usedTileIds ?? [],
+    }));
+  }
+  // legacy: top-level categories
+  if (Array.isArray(parsed?.categories) && parsed.categories.length > 0) {
+    return [
+      {
+        id: `r-legacy-${Date.now()}`,
+        name: "Round 1",
+        rows: parsed.categories[0]?.questions?.length ?? 5,
+        cols: parsed.categories.length,
+        baseValue: 100,
+        valueStep: 100,
+        categories: parsed.categories,
+        usedTileIds: parsed.usedTileIds ?? [],
+      },
+    ];
+  }
+  return null;
+}
+
 function loadState(): GameState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<GameState>;
-      if (parsed.categories?.length === 5) {
+      const parsed = JSON.parse(raw);
+      const rounds = migrateRounds(parsed);
+      if (rounds) {
         return {
-          categories: parsed.categories,
+          gameName: parsed.gameName ?? "Jeopardy!",
+          rounds,
+          activeRoundIndex: Math.min(parsed.activeRoundIndex ?? 0, rounds.length - 1),
           teams: parsed.teams ?? defaultTeams(),
-          usedTileIds: parsed.usedTileIds ?? [],
           soundEnabled: parsed.soundEnabled ?? true,
           settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
         };
@@ -36,9 +83,10 @@ function loadState(): GameState {
     }
   } catch {}
   return {
-    categories: defaultCategories(),
+    gameName: "Jeopardy!",
+    rounds: defaultRounds(),
+    activeRoundIndex: 0,
     teams: defaultTeams(),
-    usedTileIds: [],
     soundEnabled: true,
     settings: { ...DEFAULT_SETTINGS },
   };
@@ -47,7 +95,20 @@ function loadState(): GameState {
 function loadModules(): SavedGameModule[] {
   try {
     const raw = localStorage.getItem(MODULES_KEY);
-    if (raw) return JSON.parse(raw) as SavedGameModule[];
+    if (raw) {
+      const arr = JSON.parse(raw) as any[];
+      return arr.map((m) => {
+        const rounds = migrateRounds(m) ?? [];
+        return {
+          id: m.id,
+          name: m.name,
+          savedAt: m.savedAt,
+          gameName: m.gameName ?? m.name ?? "Jeopardy!",
+          rounds,
+          settings: { ...DEFAULT_SETTINGS, ...(m.settings ?? {}) },
+        };
+      });
+    }
   } catch {}
   return [];
 }
@@ -58,6 +119,8 @@ const Index = () => {
   const [activeTile, setActiveTile] = useState<{ catId: string; qId: string } | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState(state.gameName);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -67,10 +130,10 @@ const Index = () => {
     localStorage.setItem(MODULES_KEY, JSON.stringify(modules));
   }, [modules]);
 
-  const usedSet = useMemo(() => new Set(state.usedTileIds), [state.usedTileIds]);
+  const activeRound = state.rounds[state.activeRoundIndex] ?? state.rounds[0];
 
   const activeCategory = activeTile
-    ? state.categories.find((c) => c.id === activeTile.catId) ?? null
+    ? activeRound?.categories.find((c) => c.id === activeTile.catId) ?? null
     : null;
   const activeQuestion: Question | null =
     activeTile && activeCategory
@@ -81,42 +144,53 @@ const Index = () => {
     if (state.soundEnabled) sounds.click();
   };
 
+  // ---- Round helpers
+  const updateActiveRound = (updater: (r: Round) => Round) =>
+    setState((s) => ({
+      ...s,
+      rounds: s.rounds.map((r, i) => (i === s.activeRoundIndex ? updater(r) : r)),
+    }));
+
+  const updateRoundAt = (idx: number, updater: (r: Round) => Round) =>
+    setState((s) => ({
+      ...s,
+      rounds: s.rounds.map((r, i) => (i === idx ? updater(r) : r)),
+    }));
+
+  // ---- Tile interactions
   const onTileClick = (catId: string, qId: string) => {
     playClick();
     setActiveTile({ catId, qId });
-    setState((s) =>
-      s.usedTileIds.includes(qId) ? s : { ...s, usedTileIds: [...s.usedTileIds, qId] }
+    updateActiveRound((r) =>
+      r.usedTileIds.includes(qId) ? r : { ...r, usedTileIds: [...r.usedTileIds, qId] }
     );
   };
 
   const onBack = () => setActiveTile(null);
 
+  // ---- Editing categories/questions on the active round
   const updateCategoryTitle = (id: string, title: string) =>
-    setState((s) => ({
-      ...s,
-      categories: s.categories.map((c) => (c.id === id ? { ...c, title } : c)),
+    updateActiveRound((r) => ({
+      ...r,
+      categories: r.categories.map((c) => (c.id === id ? { ...c, title } : c)),
     }));
 
   const updateQuestion = (catId: string, qId: string, patch: Partial<Question>) =>
-    setState((s) => ({
-      ...s,
-      categories: s.categories.map((c) =>
+    updateActiveRound((r) => ({
+      ...r,
+      categories: r.categories.map((c) =>
         c.id !== catId
           ? c
           : { ...c, questions: c.questions.map((q) => (q.id === qId ? { ...q, ...patch } : q)) }
       ),
     }));
 
+  // ---- Teams
   const updateTeamName = (id: string, name: string) =>
-    setState((s) => ({
-      ...s,
-      teams: s.teams.map((t) => (t.id === id ? { ...t, name } : t)),
-    }));
+    setState((s) => ({ ...s, teams: s.teams.map((t) => (t.id === id ? { ...t, name } : t)) }));
 
   const adjustScore = (id: string, delta: number) => {
-    if (state.soundEnabled) {
-      delta > 0 ? sounds.correct() : sounds.wrong();
-    }
+    if (state.soundEnabled) (delta > 0 ? sounds.correct() : sounds.wrong());
     setState((s) => ({
       ...s,
       teams: s.teams.map((t) => (t.id === id ? { ...t, score: t.score + delta } : t)),
@@ -133,35 +207,133 @@ const Index = () => {
   };
 
   const removeTeam = (id: string) =>
-    setState((s) =>
-      s.teams.length <= 2 ? s : { ...s, teams: s.teams.filter((t) => t.id !== id) }
-    );
+    setState((s) => (s.teams.length <= 2 ? s : { ...s, teams: s.teams.filter((t) => t.id !== id) }));
 
-  const resetBoard = () => {
-    setState((s) => ({ ...s, usedTileIds: [], teams: s.teams.map((t) => ({ ...t, score: 0 })) }));
-    toast.success("Board and scores reset");
+  // ---- Reset
+  const resetActiveRoundUsedTiles = () => {
+    updateActiveRound((r) => ({ ...r, usedTileIds: [] }));
+    setState((s) => ({ ...s, teams: s.teams.map((t) => ({ ...t, score: 0 })) }));
+    toast.success("Round tiles and scores reset");
+  };
+
+  const resetAllRounds = () => {
+    setState((s) => ({
+      ...s,
+      rounds: s.rounds.map((r) => ({ ...r, usedTileIds: [] })),
+      teams: s.teams.map((t) => ({ ...t, score: 0 })),
+    }));
+    toast.success("All rounds and scores reset");
   };
 
   const resetGame = () => {
     setState((s) => ({
-      categories: defaultCategories(),
+      gameName: "Jeopardy!",
+      rounds: defaultRounds(),
+      activeRoundIndex: 0,
       teams: defaultTeams(),
-      usedTileIds: [],
       soundEnabled: s.soundEnabled,
       settings: s.settings,
     }));
+    setNameDraft("Jeopardy!");
     toast.success("Game reset to defaults");
   };
 
+  // ---- Settings
   const updateSettings = (patch: Partial<GameSettings>) =>
     setState((s) => ({ ...s, settings: { ...s.settings, ...patch } }));
 
+  const setGameName = (name: string) => {
+    setState((s) => ({ ...s, gameName: name }));
+    setNameDraft(name);
+  };
+
+  // ---- Rounds management
+  const addRound = () => {
+    setState((s) => {
+      const cur = s.rounds[s.activeRoundIndex] ?? s.rounds[0];
+      const newRound = makeRound(
+        `Round ${s.rounds.length + 1}`,
+        cur?.rows ?? 5,
+        cur?.cols ?? 5,
+        cur?.baseValue ?? 100,
+        cur?.valueStep ?? 100
+      );
+      return {
+        ...s,
+        rounds: [...s.rounds, newRound],
+        activeRoundIndex: s.rounds.length,
+      };
+    });
+    setActiveTile(null);
+  };
+
+  const renameRound = (idx: number, name: string) =>
+    updateRoundAt(idx, (r) => ({ ...r, name }));
+
+  const duplicateRound = (idx: number) => {
+    setState((s) => {
+      const src = s.rounds[idx];
+      if (!src) return s;
+      const copy: Round = JSON.parse(JSON.stringify(src));
+      copy.id = `r-${Date.now()}`;
+      copy.name = `${src.name} (copy)`;
+      copy.usedTileIds = [];
+      // re-id categories and questions to keep ids unique
+      copy.categories = copy.categories.map((c, ci) => ({
+        ...c,
+        id: `cat-${Date.now()}-${ci}`,
+        questions: c.questions.map((q, qi) => ({ ...q, id: `q-${Date.now()}-${ci}-${qi}` })),
+      }));
+      const rounds = [...s.rounds];
+      rounds.splice(idx + 1, 0, copy);
+      return { ...s, rounds, activeRoundIndex: idx + 1 };
+    });
+  };
+
+  const deleteRound = (idx: number) => {
+    setState((s) => {
+      if (s.rounds.length <= 1) return s;
+      const rounds = s.rounds.filter((_, i) => i !== idx);
+      const newActive = Math.min(s.activeRoundIndex, rounds.length - 1);
+      return { ...s, rounds, activeRoundIndex: newActive };
+    });
+    setActiveTile(null);
+  };
+
+  const moveRound = (idx: number, dir: -1 | 1) => {
+    setState((s) => {
+      const target = idx + dir;
+      if (target < 0 || target >= s.rounds.length) return s;
+      const rounds = [...s.rounds];
+      [rounds[idx], rounds[target]] = [rounds[target], rounds[idx]];
+      const newActive =
+        s.activeRoundIndex === idx ? target : s.activeRoundIndex === target ? idx : s.activeRoundIndex;
+      return { ...s, rounds, activeRoundIndex: newActive };
+    });
+  };
+
+  const setActiveRound = (idx: number) => {
+    setActiveTile(null);
+    setState((s) => ({ ...s, activeRoundIndex: idx }));
+  };
+
+  // ---- Layout changes for active round
+  const setRoundLayout = (rows: number, cols: number, baseValue: number, valueStep: number) => {
+    updateActiveRound((r) => resizeRound(r, rows, cols, baseValue, valueStep));
+  };
+
+  const rescaleActiveRound = (baseValue: number, valueStep: number) => {
+    updateActiveRound((r) => rescaleRoundValues(r, baseValue, valueStep));
+  };
+
+  // ---- Modules
   const saveModule = (name: string) => {
     const mod: SavedGameModule = {
       id: `m-${Date.now()}`,
       name,
       savedAt: Date.now(),
-      categories: state.categories,
+      gameName: state.gameName,
+      rounds: state.rounds,
       settings: state.settings,
     };
     setModules((m) => [...m, mod]);
@@ -172,21 +344,24 @@ const Index = () => {
     if (!mod) return;
     setState((s) => ({
       ...s,
-      categories: mod.categories,
+      gameName: mod.gameName,
+      rounds: mod.rounds.map((r) => ({ ...r, usedTileIds: [] })),
+      activeRoundIndex: 0,
       settings: { ...DEFAULT_SETTINGS, ...mod.settings },
-      usedTileIds: [],
       teams: s.teams.map((t) => ({ ...t, score: 0 })),
     }));
+    setNameDraft(mod.gameName);
     setActiveTile(null);
   };
 
-  const deleteModule = (id: string) =>
-    setModules((m) => m.filter((x) => x.id !== id));
+  const deleteModule = (id: string) => setModules((m) => m.filter((x) => x.id !== id));
 
+  // ---- Import / Export
   const exportJson = () => {
     const data = JSON.stringify(
       {
-        categories: state.categories,
+        gameName: state.gameName,
+        rounds: state.rounds.map((r) => ({ ...r, usedTileIds: [] })),
         teams: state.teams.map((t) => ({ ...t, score: 0 })),
         settings: state.settings,
       },
@@ -197,50 +372,96 @@ const Index = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "jeopardy-game.json";
+    a.download = `${state.gameName.replace(/\s+/g, "-").toLowerCase() || "jeopardy"}-game.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const importJson = (json: string) => {
     const parsed = JSON.parse(json);
-    if (!parsed.categories || parsed.categories.length !== 5) throw new Error("Invalid");
+    const rounds = migrateRounds(parsed);
+    if (!rounds || rounds.length === 0) throw new Error("Invalid");
     setState((s) => ({
       ...s,
-      categories: parsed.categories,
+      gameName: parsed.gameName ?? s.gameName,
+      rounds,
+      activeRoundIndex: 0,
       teams: parsed.teams ?? s.teams,
-      usedTileIds: [],
       settings: { ...s.settings, ...(parsed.settings ?? {}) },
     }));
+    setNameDraft(parsed.gameName ?? state.gameName);
+    setActiveTile(null);
   };
 
   return (
     <div className="min-h-screen px-3 md:px-8 py-4 md:py-6">
       {/* Top bar */}
-      <header className="flex items-center justify-between mb-4 md:mb-6">
-        <h1 className="font-display text-3xl md:text-5xl gold-gradient text-shadow-jeopardy">
-          JEOPARDY!
-        </h1>
-        <div className="flex items-center gap-2">
+      <header className="flex flex-wrap items-center justify-between gap-3 mb-4 md:mb-6">
+        <div className="flex items-center gap-2 min-w-0">
+          {editingName ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setGameName(nameDraft.trim() || "Jeopardy!");
+                    setEditingName(false);
+                  }
+                }}
+                className="font-display text-2xl md:text-4xl h-12 md:h-14 min-w-[200px] md:min-w-[400px]"
+                autoFocus
+              />
+              <Button
+                size="icon"
+                variant="secondary"
+                onClick={() => {
+                  setGameName(nameDraft.trim() || "Jeopardy!");
+                  setEditingName(false);
+                }}
+                aria-label="Save name"
+              >
+                <Check className="w-5 h-5" />
+              </Button>
+            </div>
+          ) : (
+            <>
+              <h1 className="font-display text-3xl md:text-5xl gold-gradient text-shadow-jeopardy break-words">
+                {state.gameName}
+              </h1>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => {
+                  setNameDraft(state.gameName);
+                  setEditingName(true);
+                }}
+                aria-label="Rename game"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {!activeQuestion && state.rounds.length > 0 && (
+            <RoundSwitcher
+              rounds={state.rounds}
+              activeIndex={state.activeRoundIndex}
+              onChange={setActiveRound}
+              onAddRound={addRound}
+            />
+          )}
           <Button
             variant="secondary"
             size="icon"
-            onClick={() =>
-              setState((s) => ({ ...s, soundEnabled: !s.soundEnabled }))
-            }
+            onClick={() => setState((s) => ({ ...s, soundEnabled: !s.soundEnabled }))}
             aria-label="Toggle sound"
           >
-            {state.soundEnabled ? (
-              <Volume2 className="w-5 h-5" />
-            ) : (
-              <VolumeX className="w-5 h-5" />
-            )}
+            {state.soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
           </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setSettingsOpen(true)}
-            className="font-bold"
-          >
+          <Button variant="secondary" onClick={() => setSettingsOpen(true)} className="font-bold">
             <SettingsIcon className="w-4 h-4 mr-2" /> Settings
           </Button>
           <Button onClick={() => setEditOpen(true)} className="font-bold">
@@ -259,18 +480,17 @@ const Index = () => {
             timerSeconds={state.settings.timerSeconds}
             onBack={onBack}
           />
-        ) : (
+        ) : activeRound ? (
           <div className="animate-fade-in">
             <GameBoard
-              categories={state.categories}
-              usedTileIds={usedSet}
+              round={activeRound}
               currency={state.settings.currency}
               onTileClick={onTileClick}
               onCategoryRename={updateCategoryTitle}
               editMode={false}
             />
           </div>
-        )}
+        ) : null}
 
         <Scoreboard
           teams={state.teams}
@@ -281,25 +501,42 @@ const Index = () => {
         />
       </main>
 
-      <EditPanel
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        categories={state.categories}
-        onUpdateCategoryTitle={updateCategoryTitle}
-        onUpdateQuestion={updateQuestion}
-        onResetBoard={resetBoard}
-        onResetGame={resetGame}
-        onExport={exportJson}
-        onImport={importJson}
-      />
+      {activeRound && (
+        <EditPanel
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          rounds={state.rounds}
+          activeRoundIndex={state.activeRoundIndex}
+          onChangeRound={setActiveRound}
+          round={activeRound}
+          onUpdateCategoryTitle={updateCategoryTitle}
+          onUpdateQuestion={updateQuestion}
+          onResetBoard={resetActiveRoundUsedTiles}
+          onResetAll={resetAllRounds}
+          onResetGame={resetGame}
+          onExport={exportJson}
+          onImport={importJson}
+        />
+      )}
 
       <SettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         settings={state.settings}
         onUpdateSettings={updateSettings}
+        gameName={state.gameName}
+        onSetGameName={setGameName}
+        rounds={state.rounds}
+        activeRoundIndex={state.activeRoundIndex}
+        onSetActiveRound={setActiveRound}
+        onAddRound={addRound}
+        onRenameRound={renameRound}
+        onDuplicateRound={duplicateRound}
+        onDeleteRound={deleteRound}
+        onMoveRound={moveRound}
+        onSetRoundLayout={setRoundLayout}
+        onRescaleRound={rescaleActiveRound}
         savedModules={modules}
-        currentCategories={state.categories}
         onSaveModule={saveModule}
         onLoadModule={loadModule}
         onDeleteModule={deleteModule}

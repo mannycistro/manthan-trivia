@@ -16,9 +16,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { GameSettings, SavedGameModule, Category } from "@/types/jeopardy";
+import { GameSettings, Round, SavedGameModule } from "@/types/jeopardy";
 import { useState } from "react";
-import { Save, Trash2, FolderOpen } from "lucide-react";
+import {
+  Save,
+  Trash2,
+  FolderOpen,
+  Copy,
+  ArrowUp,
+  ArrowDown,
+  Plus,
+  Check,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -26,8 +35,22 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   settings: GameSettings;
   onUpdateSettings: (patch: Partial<GameSettings>) => void;
+
+  gameName: string;
+  onSetGameName: (name: string) => void;
+
+  rounds: Round[];
+  activeRoundIndex: number;
+  onSetActiveRound: (idx: number) => void;
+  onAddRound: () => void;
+  onRenameRound: (idx: number, name: string) => void;
+  onDuplicateRound: (idx: number) => void;
+  onDeleteRound: (idx: number) => void;
+  onMoveRound: (idx: number, dir: -1 | 1) => void;
+  onSetRoundLayout: (rows: number, cols: number, baseValue: number, valueStep: number) => void;
+  onRescaleRound: (baseValue: number, valueStep: number) => void;
+
   savedModules: SavedGameModule[];
-  currentCategories: Category[];
   onSaveModule: (name: string) => void;
   onLoadModule: (id: string) => void;
   onDeleteModule: (id: string) => void;
@@ -60,12 +83,25 @@ export function SettingsDialog({
   onOpenChange,
   settings,
   onUpdateSettings,
+  gameName,
+  onSetGameName,
+  rounds,
+  activeRoundIndex,
+  onSetActiveRound,
+  onAddRound,
+  onRenameRound,
+  onDuplicateRound,
+  onDeleteRound,
+  onMoveRound,
+  onSetRoundLayout,
+  onRescaleRound,
   savedModules,
   onSaveModule,
   onLoadModule,
   onDeleteModule,
 }: Props) {
   const [moduleName, setModuleName] = useState("");
+  const [gameNameDraft, setGameNameDraft] = useState(gameName);
   const isPreset = PRESET_VALUES.has(settings.currency);
   const isNone = settings.currency === "";
   const [customMode, setCustomMode] = useState(!isPreset && !isNone);
@@ -73,11 +109,24 @@ export function SettingsDialog({
     !isPreset && !isNone ? settings.currency : ""
   );
 
-  const selectValue = customMode
-    ? CUSTOM_VALUE
-    : isNone
-    ? NONE_VALUE
-    : settings.currency;
+  const selectValue = customMode ? CUSTOM_VALUE : isNone ? NONE_VALUE : settings.currency;
+
+  const activeRound = rounds[activeRoundIndex] ?? rounds[0];
+  const [rowsDraft, setRowsDraft] = useState(activeRound?.rows ?? 5);
+  const [colsDraft, setColsDraft] = useState(activeRound?.cols ?? 5);
+  const [baseDraft, setBaseDraft] = useState(activeRound?.baseValue ?? 100);
+  const [stepDraft, setStepDraft] = useState(activeRound?.valueStep ?? 100);
+
+  // Sync drafts when active round changes
+  const syncKey = `${activeRound?.id}`;
+  const [lastKey, setLastKey] = useState(syncKey);
+  if (lastKey !== syncKey && activeRound) {
+    setRowsDraft(activeRound.rows);
+    setColsDraft(activeRound.cols);
+    setBaseDraft(activeRound.baseValue);
+    setStepDraft(activeRound.valueStep);
+    setLastKey(syncKey);
+  }
 
   const handleSave = () => {
     const name = moduleName.trim();
@@ -90,24 +139,67 @@ export function SettingsDialog({
     toast.success(`Saved "${name}"`);
   };
 
+  const applyLayout = () => {
+    if (!activeRound) return;
+    const willShrink = rowsDraft < activeRound.rows || colsDraft < activeRound.cols;
+    if (willShrink) {
+      const ok = window.confirm(
+        "Shrinking the grid will discard tiles that don't fit. Continue?"
+      );
+      if (!ok) return;
+    }
+    onSetRoundLayout(rowsDraft, colsDraft, baseDraft, stepDraft);
+    toast.success("Board layout updated");
+  };
+
+  const applyRescale = () => {
+    onRescaleRound(baseDraft, stepDraft);
+    toast.success("Tile values rescaled");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-card border-border">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl text-primary">Settings</DialogTitle>
           <DialogDescription>
-            Configure currency, timer, and manage saved games for different events.
+            Game name, currency, timer, board layout, rounds, and saved games.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 mt-2">
-          {/* Currency */}
+          {/* Game name */}
           <section className="space-y-2">
-            <Label className="text-base font-bold">Currency / Tile prefix</Label>
+            <Label className="text-base font-bold">Game Name</Label>
             <p className="text-sm text-muted-foreground">
-              Choose the symbol shown in front of each tile amount, or remove it entirely.
+              Shown as the big title at the top of the board.
             </p>
             <div className="flex gap-2">
+              <Input
+                value={gameNameDraft}
+                onChange={(e) => setGameNameDraft(e.target.value)}
+                placeholder="e.g. Q4 Trivia Showdown"
+                className="font-display text-lg"
+              />
+              <Button
+                onClick={() => {
+                  onSetGameName(gameNameDraft.trim() || "Jeopardy!");
+                  toast.success("Game name updated");
+                }}
+                className="font-bold"
+              >
+                <Check className="w-4 h-4 mr-1" /> Apply
+              </Button>
+            </div>
+          </section>
+
+          {/* Currency */}
+          <section className="space-y-2 border-t-2 border-border pt-4">
+            <Label className="text-base font-bold">Currency / Tile prefix</Label>
+            <p className="text-sm text-muted-foreground">
+              Symbol shown in front of each tile amount, or remove it entirely.
+            </p>
+            <div className="flex gap-2 flex-wrap">
               <Select
                 value={selectValue}
                 onValueChange={(v) => {
@@ -123,7 +215,7 @@ export function SettingsDialog({
                   }
                 }}
               >
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className="flex-1 min-w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -138,7 +230,6 @@ export function SettingsDialog({
                 <Input
                   placeholder="Custom symbol"
                   value={customCurrency}
-                  maxLength={6}
                   onChange={(e) => {
                     setCustomCurrency(e.target.value);
                     onUpdateSettings({ currency: e.target.value });
@@ -153,12 +244,12 @@ export function SettingsDialog({
           </section>
 
           {/* Timer */}
-          <section className="space-y-2">
+          <section className="space-y-2 border-t-2 border-border pt-4">
             <Label className="text-base font-bold">
               Question time limit: {settings.timerSeconds}s
             </Label>
             <p className="text-sm text-muted-foreground">
-              Seconds shown on the per-question countdown timer. Set to 0 to disable the timer.
+              Per-question countdown. Set to 0 to disable.
             </p>
             <div className="flex items-center gap-4">
               <Slider
@@ -182,13 +273,163 @@ export function SettingsDialog({
             </div>
           </section>
 
+          {/* Board Layout (active round) */}
+          {activeRound && (
+            <section className="space-y-3 border-t-2 border-border pt-4">
+              <div>
+                <Label className="text-base font-bold">
+                  Board Layout — {activeRound.name}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Choose how many categories (columns) and questions per category (rows).
+                  Tiles automatically resize to fill the board equally.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <Label>Categories (cols)</Label>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={8}
+                    value={colsDraft}
+                    onChange={(e) =>
+                      setColsDraft(Math.min(8, Math.max(2, Number(e.target.value) || 2)))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Questions (rows)</Label>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={8}
+                    value={rowsDraft}
+                    onChange={(e) =>
+                      setRowsDraft(Math.min(8, Math.max(2, Number(e.target.value) || 2)))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Base value</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={baseDraft}
+                    onChange={(e) => setBaseDraft(Math.max(0, Number(e.target.value) || 0))}
+                  />
+                </div>
+                <div>
+                  <Label>Step</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={stepDraft}
+                    onChange={(e) => setStepDraft(Math.max(0, Number(e.target.value) || 0))}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={applyLayout} className="font-bold">
+                  Apply Layout
+                </Button>
+                <Button onClick={applyRescale} variant="secondary" className="font-bold">
+                  Rescale Values Only
+                </Button>
+              </div>
+            </section>
+          )}
+
+          {/* Rounds manager */}
+          <section className="space-y-3 border-t-2 border-border pt-4">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <Label className="text-base font-bold">Rounds</Label>
+                <p className="text-sm text-muted-foreground">
+                  Build multiple rounds (e.g. Round 1, Double Jeopardy, Final).
+                </p>
+              </div>
+              <Button onClick={onAddRound} size="sm" className="font-bold">
+                <Plus className="w-4 h-4 mr-1" /> Add Round
+              </Button>
+            </div>
+            <ul className="space-y-2">
+              {rounds.map((r, i) => (
+                <li
+                  key={r.id}
+                  className={`flex flex-wrap items-center gap-2 border-2 rounded-lg px-3 py-2 ${
+                    i === activeRoundIndex ? "border-primary bg-primary/10" : "border-border bg-background/50"
+                  }`}
+                >
+                  <Input
+                    value={r.name}
+                    onChange={(e) => onRenameRound(i, e.target.value)}
+                    className="flex-1 min-w-[160px] font-bold"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {r.cols}×{r.rows}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => onMoveRound(i, -1)}
+                      disabled={i === 0}
+                      aria-label="Move up"
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => onMoveRound(i, 1)}
+                      disabled={i === rounds.length - 1}
+                      aria-label="Move down"
+                    >
+                      <ArrowDown className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={i === activeRoundIndex ? "default" : "secondary"}
+                      onClick={() => onSetActiveRound(i)}
+                    >
+                      {i === activeRoundIndex ? "Active" : "Activate"}
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => onDuplicateRound(i)}
+                      aria-label="Duplicate round"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        if (rounds.length <= 1) {
+                          toast.error("At least one round is required");
+                          return;
+                        }
+                        if (window.confirm(`Delete "${r.name}"?`)) onDeleteRound(i);
+                      }}
+                      aria-label="Delete round"
+                      disabled={rounds.length <= 1}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+
           {/* Saved modules */}
           <section className="space-y-3 border-t-2 border-border pt-4">
             <div>
               <Label className="text-base font-bold">Saved Games</Label>
               <p className="text-sm text-muted-foreground">
-                Save the current categories, questions, and settings as a reusable module for
-                future events.
+                Save the current game (all rounds + settings) for future events.
               </p>
             </div>
 
@@ -206,7 +447,7 @@ export function SettingsDialog({
 
             {savedModules.length === 0 ? (
               <p className="text-sm text-muted-foreground italic py-3">
-                No saved games yet. Save the current game above to reuse it later.
+                No saved games yet.
               </p>
             ) : (
               <ul className="space-y-2">
@@ -220,8 +461,9 @@ export function SettingsDialog({
                     >
                       <div className="min-w-0 flex-1">
                         <div className="font-bold truncate">{m.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(m.savedAt).toLocaleString()} · {m.categories.length} categories
+                        <div className="text-xs text-muted-foreground truncate">
+                          {new Date(m.savedAt).toLocaleString()} · {m.gameName} ·{" "}
+                          {m.rounds.length} round{m.rounds.length !== 1 ? "s" : ""}
                         </div>
                       </div>
                       <Button
