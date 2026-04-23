@@ -1,23 +1,38 @@
 import { useEffect, useMemo, useState } from "react";
-import { Category, GameState, Question, Team } from "@/types/jeopardy";
+import { Category, GameSettings, GameState, Question, SavedGameModule, Team } from "@/types/jeopardy";
 import { defaultCategories, defaultTeams } from "@/lib/defaultGame";
 import { GameBoard } from "@/components/jeopardy/GameBoard";
 import { QuestionView } from "@/components/jeopardy/QuestionView";
 import { Scoreboard } from "@/components/jeopardy/Scoreboard";
 import { EditPanel } from "@/components/jeopardy/EditPanel";
+import { SettingsDialog } from "@/components/jeopardy/SettingsDialog";
 import { Button } from "@/components/ui/button";
-import { Pencil, Volume2, VolumeX } from "lucide-react";
+import { Pencil, Settings as SettingsIcon, Volume2, VolumeX } from "lucide-react";
 import { sounds } from "@/lib/sounds";
 import { toast } from "sonner";
 
 const STORAGE_KEY = "jeopardy-game-v1";
+const MODULES_KEY = "jeopardy-modules-v1";
+
+const DEFAULT_SETTINGS: GameSettings = {
+  currency: "$",
+  timerSeconds: 30,
+};
 
 function loadState(): GameState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as GameState;
-      if (parsed.categories?.length === 5) return parsed;
+      const parsed = JSON.parse(raw) as Partial<GameState>;
+      if (parsed.categories?.length === 5) {
+        return {
+          categories: parsed.categories,
+          teams: parsed.teams ?? defaultTeams(),
+          usedTileIds: parsed.usedTileIds ?? [],
+          soundEnabled: parsed.soundEnabled ?? true,
+          settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
+        };
+      }
     }
   } catch {}
   return {
@@ -25,17 +40,32 @@ function loadState(): GameState {
     teams: defaultTeams(),
     usedTileIds: [],
     soundEnabled: true,
+    settings: { ...DEFAULT_SETTINGS },
   };
+}
+
+function loadModules(): SavedGameModule[] {
+  try {
+    const raw = localStorage.getItem(MODULES_KEY);
+    if (raw) return JSON.parse(raw) as SavedGameModule[];
+  } catch {}
+  return [];
 }
 
 const Index = () => {
   const [state, setState] = useState<GameState>(loadState);
+  const [modules, setModules] = useState<SavedGameModule[]>(loadModules);
   const [activeTile, setActiveTile] = useState<{ catId: string; qId: string } | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
+
+  useEffect(() => {
+    localStorage.setItem(MODULES_KEY, JSON.stringify(modules));
+  }, [modules]);
 
   const usedSet = useMemo(() => new Set(state.usedTileIds), [state.usedTileIds]);
 
@@ -113,18 +143,53 @@ const Index = () => {
   };
 
   const resetGame = () => {
-    setState({
+    setState((s) => ({
       categories: defaultCategories(),
       teams: defaultTeams(),
       usedTileIds: [],
-      soundEnabled: state.soundEnabled,
-    });
+      soundEnabled: s.soundEnabled,
+      settings: s.settings,
+    }));
     toast.success("Game reset to defaults");
   };
 
+  const updateSettings = (patch: Partial<GameSettings>) =>
+    setState((s) => ({ ...s, settings: { ...s.settings, ...patch } }));
+
+  const saveModule = (name: string) => {
+    const mod: SavedGameModule = {
+      id: `m-${Date.now()}`,
+      name,
+      savedAt: Date.now(),
+      categories: state.categories,
+      settings: state.settings,
+    };
+    setModules((m) => [...m, mod]);
+  };
+
+  const loadModule = (id: string) => {
+    const mod = modules.find((m) => m.id === id);
+    if (!mod) return;
+    setState((s) => ({
+      ...s,
+      categories: mod.categories,
+      settings: { ...DEFAULT_SETTINGS, ...mod.settings },
+      usedTileIds: [],
+      teams: s.teams.map((t) => ({ ...t, score: 0 })),
+    }));
+    setActiveTile(null);
+  };
+
+  const deleteModule = (id: string) =>
+    setModules((m) => m.filter((x) => x.id !== id));
+
   const exportJson = () => {
     const data = JSON.stringify(
-      { categories: state.categories, teams: state.teams.map((t) => ({ ...t, score: 0 })) },
+      {
+        categories: state.categories,
+        teams: state.teams.map((t) => ({ ...t, score: 0 })),
+        settings: state.settings,
+      },
       null,
       2
     );
@@ -145,6 +210,7 @@ const Index = () => {
       categories: parsed.categories,
       teams: parsed.teams ?? s.teams,
       usedTileIds: [],
+      settings: { ...s.settings, ...(parsed.settings ?? {}) },
     }));
   };
 
@@ -170,6 +236,13 @@ const Index = () => {
               <VolumeX className="w-5 h-5" />
             )}
           </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setSettingsOpen(true)}
+            className="font-bold"
+          >
+            <SettingsIcon className="w-4 h-4 mr-2" /> Settings
+          </Button>
           <Button onClick={() => setEditOpen(true)} className="font-bold">
             <Pencil className="w-4 h-4 mr-2" /> Edit Game
           </Button>
@@ -182,6 +255,8 @@ const Index = () => {
             category={activeCategory}
             question={activeQuestion}
             soundEnabled={state.soundEnabled}
+            currency={state.settings.currency}
+            timerSeconds={state.settings.timerSeconds}
             onBack={onBack}
           />
         ) : (
@@ -189,6 +264,7 @@ const Index = () => {
             <GameBoard
               categories={state.categories}
               usedTileIds={usedSet}
+              currency={state.settings.currency}
               onTileClick={onTileClick}
               onCategoryRename={updateCategoryTitle}
               editMode={false}
@@ -215,6 +291,18 @@ const Index = () => {
         onResetGame={resetGame}
         onExport={exportJson}
         onImport={importJson}
+      />
+
+      <SettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        settings={state.settings}
+        onUpdateSettings={updateSettings}
+        savedModules={modules}
+        currentCategories={state.categories}
+        onSaveModule={saveModule}
+        onLoadModule={loadModule}
+        onDeleteModule={deleteModule}
       />
     </div>
   );

@@ -21,9 +21,23 @@ export interface Team {
   score: number;
 }
 
+export interface GameSettings {
+  currency: string; // e.g. "$", "€", "£", "¥", "₹", "" (none), or custom
+  timerSeconds: number; // per-question timer duration
+}
+
 export interface GameState {
   categories: Category[];
   teams: Team[];
   usedTileIds: string[];
   soundEnabled: boolean;
+  settings: GameSettings;
+}
+
+export interface SavedGameModule {
+  id: string;
+  name: string;
+  savedAt: number;
+  categories: Category[];
+  settings: GameSettings;
 }
