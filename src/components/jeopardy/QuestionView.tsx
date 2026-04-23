@@ -102,17 +102,17 @@ export function QuestionView({ category, question, soundEnabled, currency, timer
 
       {/* Main panel */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-5xl bg-accent/90 border-4 border-primary/40 rounded-3xl p-6 md:p-12 shadow-glow text-center">
+        <div className="w-full max-w-5xl bg-accent/90 border-4 border-primary/40 rounded-3xl p-6 md:p-12 shadow-glow text-center max-h-[75vh] overflow-y-auto">
           {renderMedia() && <div className="mb-6">{renderMedia()}</div>}
 
-          <p className="font-display text-2xl md:text-5xl text-white text-shadow-jeopardy uppercase leading-tight">
+          <p className="font-display auto-shrink text-white text-shadow-jeopardy uppercase break-words">
             {question.question}
           </p>
 
           {revealed && (
             <div className="mt-8 pt-8 border-t-2 border-primary/40 animate-reveal">
               <p className="text-sm uppercase tracking-widest text-primary mb-2">Answer</p>
-              <p className="font-display text-3xl md:text-5xl gold-gradient">
+              <p className="font-display auto-shrink gold-gradient break-words">
                 {question.answer}
               </p>
             </div>

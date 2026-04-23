@@ -1,4 +1,4 @@
-import { Category, MediaType, Question } from "@/types/jeopardy";
+import { MediaType, Question, Round } from "@/types/jeopardy";
 import {
   Dialog,
   DialogContent,
@@ -25,10 +25,14 @@ import { toast } from "sonner";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  categories: Category[];
+  rounds: Round[];
+  activeRoundIndex: number;
+  onChangeRound: (idx: number) => void;
+  round: Round;
   onUpdateCategoryTitle: (id: string, title: string) => void;
   onUpdateQuestion: (categoryId: string, questionId: string, patch: Partial<Question>) => void;
   onResetBoard: () => void;
+  onResetAll: () => void;
   onResetGame: () => void;
   onExport: () => void;
   onImport: (json: string) => void;
@@ -37,10 +41,14 @@ interface Props {
 export function EditPanel({
   open,
   onOpenChange,
-  categories,
+  rounds,
+  activeRoundIndex,
+  onChangeRound,
+  round,
   onUpdateCategoryTitle,
   onUpdateQuestion,
   onResetBoard,
+  onResetAll,
   onResetGame,
   onExport,
   onImport,
@@ -80,17 +88,41 @@ export function EditPanel({
     reader.readAsText(file);
   };
 
+  const categories = round.categories;
+  const cols = Math.max(1, categories.length);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-card border-border">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl text-primary">Edit Game</DialogTitle>
           <DialogDescription>
-            Edit categories, questions, answers, and media. Changes save automatically.
+            Edit categories, questions, answers, and media for the selected round. Changes save
+            automatically.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-wrap gap-2 mb-2">
+        {/* Round selector + actions */}
+        <div className="flex flex-wrap gap-2 mb-2 items-center">
+          <Label className="text-sm">Round:</Label>
+          <Select
+            value={String(activeRoundIndex)}
+            onValueChange={(v) => onChangeRound(Number(v))}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {rounds.map((r, i) => (
+                <SelectItem key={r.id} value={String(i)}>
+                  {r.name || `Round ${i + 1}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex-1" />
+
           <Button variant="secondary" size="sm" onClick={onExport}>
             <Download className="w-4 h-4 mr-1" /> Export JSON
           </Button>
@@ -113,15 +145,21 @@ export function EditPanel({
             }}
           />
           <Button variant="outline" size="sm" onClick={onResetBoard}>
-            Reset Used Tiles
+            Reset This Round
+          </Button>
+          <Button variant="outline" size="sm" onClick={onResetAll}>
+            Reset All Rounds
           </Button>
           <Button variant="destructive" size="sm" onClick={onResetGame}>
             Reset to Default Game
           </Button>
         </div>
 
-        <Tabs defaultValue={categories[0]?.id} className="w-full">
-          <TabsList className="grid grid-cols-5 w-full">
+        <Tabs defaultValue={categories[0]?.id} key={round.id} className="w-full">
+          <TabsList
+            className="grid w-full"
+            style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+          >
             {categories.map((c) => (
               <TabsTrigger key={c.id} value={c.id} className="truncate">
                 {c.title || "Category"}
@@ -133,9 +171,10 @@ export function EditPanel({
             <TabsContent key={cat.id} value={cat.id} className="space-y-4 mt-4">
               <div>
                 <Label>Category Title</Label>
-                <Input
+                <Textarea
                   value={cat.title}
                   onChange={(e) => onUpdateCategoryTitle(cat.id, e.target.value)}
+                  rows={2}
                   className="font-display text-lg"
                 />
               </div>
@@ -145,8 +184,18 @@ export function EditPanel({
                   key={q.id}
                   className="border-2 border-border rounded-xl p-4 space-y-3 bg-background/50"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-display text-2xl text-primary">${q.value}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-display text-2xl text-primary">
+                      {q.value}
+                    </span>
+                    <Input
+                      type="number"
+                      value={q.value}
+                      onChange={(e) =>
+                        onUpdateQuestion(cat.id, q.id, { value: Number(e.target.value) || 0 })
+                      }
+                      className="w-32"
+                    />
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-3">
@@ -157,7 +206,7 @@ export function EditPanel({
                         onChange={(e) =>
                           onUpdateQuestion(cat.id, q.id, { question: e.target.value })
                         }
-                        rows={3}
+                        rows={4}
                       />
                     </div>
                     <div>
@@ -167,7 +216,7 @@ export function EditPanel({
                         onChange={(e) =>
                           onUpdateQuestion(cat.id, q.id, { answer: e.target.value })
                         }
-                        rows={3}
+                        rows={4}
                       />
                     </div>
                   </div>
