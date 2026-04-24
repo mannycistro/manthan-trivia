@@ -41,6 +41,7 @@ interface Props {
   onChangeRound: (idx: number) => void;
   round: Round;
   onUpdateCategoryTitle: (id: string, title: string) => void;
+  onUpdateCategory: (id: string, patch: { titleFontFamily?: string; titleFontSize?: number }) => void;
   onUpdateQuestion: (categoryId: string, questionId: string, patch: Partial<Question>) => void;
   onResetBoard: () => void;
   onResetAll: () => void;
@@ -50,6 +51,25 @@ interface Props {
   settings: GameSettings;
   onUpdateSettings: (patch: Partial<GameSettings>) => void;
 }
+
+export function EditPanel({
+  open,
+  onOpenChange,
+  rounds,
+  activeRoundIndex,
+  onChangeRound,
+  round,
+  onUpdateCategoryTitle,
+  onUpdateCategory,
+  onUpdateQuestion,
+  onResetBoard,
+  onResetAll,
+  onResetGame,
+  onExport,
+  onImport,
+  settings,
+  onUpdateSettings,
+}: Props) {
 
 export function EditPanel({
   open,
