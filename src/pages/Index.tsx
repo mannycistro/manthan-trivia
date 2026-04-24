@@ -525,6 +525,8 @@ const Index = () => {
           onResetGame={resetGame}
           onExport={exportJson}
           onImport={importJson}
+          settings={state.settings}
+          onUpdateSettings={updateSettings}
         />
       )}
 
