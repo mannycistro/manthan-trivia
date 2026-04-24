@@ -15,7 +15,7 @@ import {
 } from "@/lib/defaultGame";
 import { GameBoard } from "@/components/jeopardy/GameBoard";
 import { QuestionView } from "@/components/jeopardy/QuestionView";
-import { Scoreboard } from "@/components/jeopardy/Scoreboard";
+import { ScoreboardBar } from "@/components/jeopardy/ScoreboardBar";
 import { EditPanel } from "@/components/jeopardy/EditPanel";
 import { SettingsDialog } from "@/components/jeopardy/SettingsDialog";
 import { RoundSwitcher } from "@/components/jeopardy/RoundSwitcher";
