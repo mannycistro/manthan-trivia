@@ -70,24 +70,6 @@ export function EditPanel({
   settings,
   onUpdateSettings,
 }: Props) {
-
-export function EditPanel({
-  open,
-  onOpenChange,
-  rounds,
-  activeRoundIndex,
-  onChangeRound,
-  round,
-  onUpdateCategoryTitle,
-  onUpdateQuestion,
-  onResetBoard,
-  onResetAll,
-  onResetGame,
-  onExport,
-  onImport,
-  settings,
-  onUpdateSettings,
-}: Props) {
   const importRef = useRef<HTMLInputElement>(null);
 
   const handleMediaUpload = (
