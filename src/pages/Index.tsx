@@ -15,7 +15,7 @@ import {
 } from "@/lib/defaultGame";
 import { GameBoard } from "@/components/jeopardy/GameBoard";
 import { QuestionView } from "@/components/jeopardy/QuestionView";
-import { Scoreboard } from "@/components/jeopardy/Scoreboard";
+import { ScoreboardBar } from "@/components/jeopardy/ScoreboardBar";
 import { EditPanel } from "@/components/jeopardy/EditPanel";
 import { SettingsDialog } from "@/components/jeopardy/SettingsDialog";
 import { RoundSwitcher } from "@/components/jeopardy/RoundSwitcher";
@@ -394,9 +394,9 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen px-3 md:px-8 py-4 md:py-6">
+    <div className="h-screen flex flex-col px-3 md:px-6 pt-3 md:pt-4 overflow-hidden">
       {/* Top bar */}
-      <header className="flex flex-wrap items-center justify-between gap-3 mb-4 md:mb-6">
+      <header className="flex flex-wrap items-center justify-between gap-3 mb-3 md:mb-4 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           {editingName ? (
             <div className="flex items-center gap-2">
@@ -470,7 +470,7 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="space-y-6">
+      <main className="flex-1 min-h-0 overflow-y-auto pb-3">
         {activeQuestion && activeCategory ? (
           <QuestionView
             category={activeCategory}
@@ -481,7 +481,7 @@ const Index = () => {
             onBack={onBack}
           />
         ) : activeRound ? (
-          <div className="animate-fade-in">
+          <div className="animate-fade-in h-full">
             <GameBoard
               round={activeRound}
               currency={state.settings.currency}
@@ -491,15 +491,18 @@ const Index = () => {
             />
           </div>
         ) : null}
+      </main>
 
-        <Scoreboard
+      {/* Sticky horizontal scoreboard */}
+      <div className="shrink-0 -mx-3 md:-mx-6 mt-auto">
+        <ScoreboardBar
           teams={state.teams}
           onUpdateName={updateTeamName}
           onAdjustScore={adjustScore}
           onAddTeam={addTeam}
           onRemoveTeam={removeTeam}
         />
-      </main>
+      </div>
 
       {activeRound && (
         <EditPanel
