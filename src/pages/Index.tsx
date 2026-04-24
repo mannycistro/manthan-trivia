@@ -528,6 +528,7 @@ const Index = () => {
           onChangeRound={setActiveRound}
           round={activeRound}
           onUpdateCategoryTitle={updateCategoryTitle}
+          onUpdateCategory={updateCategory}
           onUpdateQuestion={updateQuestion}
           onResetBoard={resetActiveRoundUsedTiles}
           onResetAll={resetAllRounds}
