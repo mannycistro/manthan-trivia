@@ -41,6 +41,7 @@ interface Props {
   onChangeRound: (idx: number) => void;
   round: Round;
   onUpdateCategoryTitle: (id: string, title: string) => void;
+  onUpdateCategory: (id: string, patch: { titleFontFamily?: string; titleFontSize?: number }) => void;
   onUpdateQuestion: (categoryId: string, questionId: string, patch: Partial<Question>) => void;
   onResetBoard: () => void;
   onResetAll: () => void;
@@ -59,6 +60,7 @@ export function EditPanel({
   onChangeRound,
   round,
   onUpdateCategoryTitle,
+  onUpdateCategory,
   onUpdateQuestion,
   onResetBoard,
   onResetAll,
@@ -265,6 +267,98 @@ export function EditPanel({
                   rows={2}
                   className="font-display text-lg"
                 />
+              </div>
+
+              {/* Per-category title typography */}
+              <div className="rounded-lg border-2 border-border bg-background/40 p-3 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-sm font-bold">Title Typography (this category)</Label>
+                  <span
+                    className="text-base px-3 py-1 rounded bg-accent text-accent-foreground truncate max-w-[50%]"
+                    style={{
+                      fontFamily: `'${cat.titleFontFamily ?? settings.categoryFontFamily ?? "Montserrat"}', system-ui, sans-serif`,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.02em",
+                      fontSize: Math.min(28, cat.titleFontSize ?? settings.categoryFontSize ?? 32),
+                    }}
+                  >
+                    {cat.title || "Preview"}
+                  </span>
+                </div>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Font Family</Label>
+                    <Select
+                      value={cat.titleFontFamily ?? settings.categoryFontFamily ?? "Montserrat"}
+                      onValueChange={(v) => onUpdateCategory(cat.id, { titleFontFamily: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORY_FONT_OPTIONS.map((f) => (
+                          <SelectItem
+                            key={f}
+                            value={f}
+                            style={{ fontFamily: `'${f}', system-ui, sans-serif` }}
+                          >
+                            {f}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">
+                      Base Font Size: {cat.titleFontSize ?? settings.categoryFontSize ?? 32}px
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Slider
+                        min={12}
+                        max={72}
+                        step={1}
+                        value={[cat.titleFontSize ?? settings.categoryFontSize ?? 32]}
+                        onValueChange={(v) => onUpdateCategory(cat.id, { titleFontSize: v[0] })}
+                        className="flex-1"
+                      />
+                      <Input
+                        type="number"
+                        min={12}
+                        max={72}
+                        value={cat.titleFontSize ?? settings.categoryFontSize ?? 32}
+                        onChange={(e) =>
+                          onUpdateCategory(cat.id, {
+                            titleFontSize: Math.max(
+                              12,
+                              Math.min(72, Number(e.target.value) || 32)
+                            ),
+                          })
+                        }
+                        className="w-20"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    Overrides global settings for this category. Auto-saves.
+                  </p>
+                  {(cat.titleFontFamily !== undefined || cat.titleFontSize !== undefined) && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        onUpdateCategory(cat.id, {
+                          titleFontFamily: undefined,
+                          titleFontSize: undefined,
+                        })
+                      }
+                    >
+                      Reset to global
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {cat.questions.map((q) => (

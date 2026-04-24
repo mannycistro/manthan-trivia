@@ -27,37 +27,42 @@ export function GameBoard({
   const gridTemplateRows = `minmax(0, 0.6fr) repeat(${rows}, minmax(0, 1fr))`;
   const gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
 
-  const categoryFontStack = `'${categoryFontFamily}', system-ui, -apple-system, sans-serif`;
+  const categoryFontStack = (family: string) =>
+    `'${family}', system-ui, -apple-system, sans-serif`;
 
   return (
     <div
       className="grid gap-1.5 md:gap-2 w-full h-full"
       style={{ gridTemplateColumns, gridTemplateRows }}
     >
-      {categories.map((cat) => (
-        <div
-          key={`h-${cat.id}`}
-          className="bg-accent text-accent-foreground rounded-lg p-1.5 md:p-2 flex items-center justify-center text-center shadow-tile overflow-hidden min-w-0 min-h-0 [container-type:size]"
-        >
-          {editMode ? (
-            <Textarea
-              value={cat.title}
-              onChange={(e) => onCategoryRename(cat.id, e.target.value)}
-              rows={2}
-              className="font-category text-center bg-transparent border-white/30 text-white placeholder:text-white/50 resize-none h-full"
-            />
-          ) : (
-            <AutoFitText
-              text={cat.title}
-              className="font-category text-shadow-jeopardy"
-              minFontSize={10}
-              maxFontSize={categoryFontSize}
-              refitKey={`${rows}x${cols}-${categoryFontFamily}-${categoryFontSize}`}
-              fontFamily={categoryFontStack}
-            />
-          )}
-        </div>
-      ))}
+      {categories.map((cat) => {
+        const family = cat.titleFontFamily || categoryFontFamily;
+        const size = cat.titleFontSize ?? categoryFontSize;
+        return (
+          <div
+            key={`h-${cat.id}`}
+            className="bg-accent text-accent-foreground rounded-lg p-1.5 md:p-2 flex items-center justify-center text-center shadow-tile overflow-hidden min-w-0 min-h-0 [container-type:size]"
+          >
+            {editMode ? (
+              <Textarea
+                value={cat.title}
+                onChange={(e) => onCategoryRename(cat.id, e.target.value)}
+                rows={2}
+                className="font-category text-center bg-transparent border-white/30 text-white placeholder:text-white/50 resize-none h-full"
+              />
+            ) : (
+              <AutoFitText
+                text={cat.title}
+                className="font-category text-shadow-jeopardy"
+                minFontSize={10}
+                maxFontSize={size}
+                refitKey={`${rows}x${cols}-${family}-${size}`}
+                fontFamily={categoryFontStack(family)}
+              />
+            )}
+          </div>
+        );
+      })}
 
       {Array.from({ length: rows }).map((_, row) =>
         categories.map((cat) => {

@@ -177,6 +177,15 @@ const Index = () => {
       categories: r.categories.map((c) => (c.id === id ? { ...c, title } : c)),
     }));
 
+  const updateCategory = (
+    id: string,
+    patch: { titleFontFamily?: string; titleFontSize?: number }
+  ) =>
+    updateActiveRound((r) => ({
+      ...r,
+      categories: r.categories.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
+
   const updateQuestion = (catId: string, qId: string, patch: Partial<Question>) =>
     updateActiveRound((r) => ({
       ...r,
@@ -519,6 +528,7 @@ const Index = () => {
           onChangeRound={setActiveRound}
           round={activeRound}
           onUpdateCategoryTitle={updateCategoryTitle}
+          onUpdateCategory={updateCategory}
           onUpdateQuestion={updateQuestion}
           onResetBoard={resetActiveRoundUsedTiles}
           onResetAll={resetAllRounds}

@@ -13,6 +13,10 @@ export interface Category {
   id: string;
   title: string;
   questions: Question[];
+  /** Optional per-category override for the title font family. */
+  titleFontFamily?: string;
+  /** Optional per-category override for the title base (max) font size in px. */
+  titleFontSize?: number;
 }
 
 export interface Team {
