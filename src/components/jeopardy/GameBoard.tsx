@@ -1,5 +1,6 @@
 import { Round } from "@/types/jeopardy";
 import { Textarea } from "@/components/ui/textarea";
+import { AutoFitText } from "./AutoFitText";
 
 interface Props {
   round: Round;
@@ -40,17 +41,16 @@ export function GameBoard({
               value={cat.title}
               onChange={(e) => onCategoryRename(cat.id, e.target.value)}
               rows={2}
-              className="font-display text-center bg-transparent border-white/30 text-white placeholder:text-white/50 resize-none h-full"
+              className="font-category text-center bg-transparent border-white/30 text-white placeholder:text-white/50 resize-none h-full"
             />
           ) : (
-            <h2
-              className="font-display uppercase text-shadow-jeopardy break-words w-full leading-tight"
-              style={{
-                fontSize: "clamp(0.6rem, min(22cqw, 38cqh), 2rem)",
-              }}
-            >
-              {cat.title}
-            </h2>
+            <AutoFitText
+              text={cat.title}
+              className="font-category text-shadow-jeopardy"
+              minFontSize={8}
+              maxFontSize={48}
+              refitKey={`${rows}x${cols}`}
+            />
           )}
         </div>
       ))}
