@@ -470,18 +470,20 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 overflow-y-auto pb-3">
+      <main className="flex-1 min-h-0 flex flex-col pb-2">
         {activeQuestion && activeCategory ? (
-          <QuestionView
-            category={activeCategory}
-            question={activeQuestion}
-            soundEnabled={state.soundEnabled}
-            currency={state.settings.currency}
-            timerSeconds={state.settings.timerSeconds}
-            onBack={onBack}
-          />
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <QuestionView
+              category={activeCategory}
+              question={activeQuestion}
+              soundEnabled={state.soundEnabled}
+              currency={state.settings.currency}
+              timerSeconds={state.settings.timerSeconds}
+              onBack={onBack}
+            />
+          </div>
         ) : activeRound ? (
-          <div className="animate-fade-in h-full">
+          <div className="animate-fade-in flex-1 min-h-0">
             <GameBoard
               round={activeRound}
               currency={state.settings.currency}
