@@ -31,6 +31,8 @@ const MODULES_KEY = "jeopardy-modules-v1";
 const DEFAULT_SETTINGS: GameSettings = {
   currency: "$",
   timerSeconds: 30,
+  categoryFontFamily: "Montserrat",
+  categoryFontSize: 32,
 };
 
 function migrateRounds(parsed: any): Round[] | null {
@@ -490,6 +492,8 @@ const Index = () => {
               onTileClick={onTileClick}
               onCategoryRename={updateCategoryTitle}
               editMode={false}
+              categoryFontFamily={state.settings.categoryFontFamily}
+              categoryFontSize={state.settings.categoryFontSize}
             />
           </div>
         ) : null}

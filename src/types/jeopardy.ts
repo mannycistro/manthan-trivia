@@ -24,6 +24,8 @@ export interface Team {
 export interface GameSettings {
   currency: string;
   timerSeconds: number;
+  categoryFontFamily?: string;
+  categoryFontSize?: number; // base (max) px
 }
 
 export interface Round {
