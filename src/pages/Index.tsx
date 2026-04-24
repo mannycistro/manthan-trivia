@@ -394,7 +394,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen px-3 md:px-8 py-4 md:py-6">
+    <div className="h-screen flex flex-col px-3 md:px-6 pt-3 md:pt-4 overflow-hidden">
       {/* Top bar */}
       <header className="flex flex-wrap items-center justify-between gap-3 mb-3 md:mb-4 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
