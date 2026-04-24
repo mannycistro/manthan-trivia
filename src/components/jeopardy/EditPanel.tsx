@@ -1,4 +1,4 @@
-import { MediaType, Question, Round } from "@/types/jeopardy";
+import { GameSettings, MediaType, Question, Round } from "@/types/jeopardy";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,34 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Download, Upload, X } from "lucide-react";
 import { useRef } from "react";
 import { toast } from "sonner";
+
+const CATEGORY_FONT_OPTIONS = [
+  "Montserrat",
+  "Inter",
+  "Poppins",
+  "Oswald",
+  "Bebas Neue",
+  "Anton",
+  "Roboto Condensed",
+];
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  rounds: Round[];
+  activeRoundIndex: number;
+  onChangeRound: (idx: number) => void;
+  round: Round;
+  onUpdateCategoryTitle: (id: string, title: string) => void;
+  onUpdateQuestion: (categoryId: string, questionId: string, patch: Partial<Question>) => void;
+  onResetBoard: () => void;
+  onResetAll: () => void;
+  onResetGame: () => void;
+  onExport: () => void;
+  onImport: (json: string) => void;
+  settings: GameSettings;
+  onUpdateSettings: (patch: Partial<GameSettings>) => void;
+}
 
 interface Props {
   open: boolean;
