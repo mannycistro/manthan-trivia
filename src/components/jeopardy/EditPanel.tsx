@@ -51,22 +51,6 @@ interface Props {
   onUpdateSettings: (patch: Partial<GameSettings>) => void;
 }
 
-interface Props {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  rounds: Round[];
-  activeRoundIndex: number;
-  onChangeRound: (idx: number) => void;
-  round: Round;
-  onUpdateCategoryTitle: (id: string, title: string) => void;
-  onUpdateQuestion: (categoryId: string, questionId: string, patch: Partial<Question>) => void;
-  onResetBoard: () => void;
-  onResetAll: () => void;
-  onResetGame: () => void;
-  onExport: () => void;
-  onImport: (json: string) => void;
-}
-
 export function EditPanel({
   open,
   onOpenChange,
@@ -81,6 +65,8 @@ export function EditPanel({
   onResetGame,
   onExport,
   onImport,
+  settings,
+  onUpdateSettings,
 }: Props) {
   const importRef = useRef<HTMLInputElement>(null);
 
