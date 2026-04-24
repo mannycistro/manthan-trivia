@@ -8,6 +8,8 @@ interface Props {
   onTileClick: (categoryId: string, questionId: string) => void;
   onCategoryRename: (categoryId: string, title: string) => void;
   editMode: boolean;
+  categoryFontFamily?: string;
+  categoryFontSize?: number;
 }
 
 export function GameBoard({
@@ -16,21 +18,22 @@ export function GameBoard({
   onTileClick,
   onCategoryRename,
   editMode,
+  categoryFontFamily = "Montserrat",
+  categoryFontSize = 32,
 }: Props) {
   const { categories, rows, cols, usedTileIds } = round;
   const usedSet = new Set(usedTileIds);
 
-  // Header row gets a smaller share than question rows.
-  // Total tracks: 1 header row + `rows` question rows.
   const gridTemplateRows = `minmax(0, 0.6fr) repeat(${rows}, minmax(0, 1fr))`;
   const gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+
+  const categoryFontStack = `'${categoryFontFamily}', system-ui, -apple-system, sans-serif`;
 
   return (
     <div
       className="grid gap-1.5 md:gap-2 w-full h-full"
       style={{ gridTemplateColumns, gridTemplateRows }}
     >
-      {/* Category headers */}
       {categories.map((cat) => (
         <div
           key={`h-${cat.id}`}
@@ -47,15 +50,15 @@ export function GameBoard({
             <AutoFitText
               text={cat.title}
               className="font-category text-shadow-jeopardy"
-              minFontSize={8}
-              maxFontSize={48}
-              refitKey={`${rows}x${cols}`}
+              minFontSize={10}
+              maxFontSize={categoryFontSize}
+              refitKey={`${rows}x${cols}-${categoryFontFamily}-${categoryFontSize}`}
+              fontFamily={categoryFontStack}
             />
           )}
         </div>
       ))}
 
-      {/* Question tiles row by row */}
       {Array.from({ length: rows }).map((_, row) =>
         categories.map((cat) => {
           const q = cat.questions[row];

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 interface Props {
   text: string;
@@ -7,11 +7,13 @@ interface Props {
   maxFontSize?: number;
   /** Optional dependency that should trigger a refit (e.g. grid size). */
   refitKey?: string | number;
+  fontFamily?: string;
 }
 
 /**
- * Renders text on a single line and binary-searches the largest font size
- * that fits within the parent container's width and height.
+ * Renders text on a single line, starting at maxFontSize (the user-defined
+ * base) and only shrinking down toward minFontSize when it would overflow.
+ * Never scales above maxFontSize.
  */
 export function AutoFitText({
   text,
@@ -19,6 +21,7 @@ export function AutoFitText({
   minFontSize = 8,
   maxFontSize = 64,
   refitKey,
+  fontFamily,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
@@ -35,11 +38,16 @@ export function AutoFitText({
       const ch = container.clientHeight;
       if (cw === 0 || ch === 0) return;
 
+      // Try the base size first; only shrink if needed.
+      span.style.fontSize = `${maxFontSize}px`;
+      if (span.scrollWidth <= cw && span.scrollHeight <= ch) {
+        setFontSize(maxFontSize);
+        return;
+      }
+
       let lo = minFontSize;
       let hi = maxFontSize;
       let best = minFontSize;
-
-      // Binary search the largest font size that fits.
       while (lo <= hi) {
         const mid = Math.floor((lo + hi) / 2);
         span.style.fontSize = `${mid}px`;
@@ -66,7 +74,7 @@ export function AutoFitText({
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [text, minFontSize, maxFontSize, refitKey]);
+  }, [text, minFontSize, maxFontSize, refitKey, fontFamily]);
 
   return (
     <div
@@ -78,10 +86,13 @@ export function AutoFitText({
         className={className}
         style={{
           fontSize,
+          fontFamily,
           whiteSpace: "nowrap",
           display: "inline-block",
           lineHeight: 1.1,
           maxWidth: "100%",
+          textOverflow: "ellipsis",
+          overflow: "hidden",
         }}
       >
         {text}
@@ -89,3 +100,4 @@ export function AutoFitText({
     </div>
   );
 }
+
