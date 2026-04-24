@@ -170,6 +170,79 @@ export function EditPanel({
           </Button>
         </div>
 
+        {/* Category title typography */}
+        <div className="rounded-lg border-2 border-border bg-background/40 p-3 mb-2 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-sm font-bold">Category Title Typography</Label>
+            <span
+              className="text-base px-3 py-1 rounded bg-accent text-accent-foreground truncate max-w-[50%]"
+              style={{
+                fontFamily: `'${settings.categoryFontFamily ?? "Montserrat"}', system-ui, sans-serif`,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.02em",
+                fontSize: Math.min(28, settings.categoryFontSize ?? 32),
+              }}
+            >
+              Preview
+            </span>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Font Family</Label>
+              <Select
+                value={settings.categoryFontFamily ?? "Montserrat"}
+                onValueChange={(v) => onUpdateSettings({ categoryFontFamily: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORY_FONT_OPTIONS.map((f) => (
+                    <SelectItem
+                      key={f}
+                      value={f}
+                      style={{ fontFamily: `'${f}', system-ui, sans-serif` }}
+                    >
+                      {f}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">
+                Base Font Size: {settings.categoryFontSize ?? 32}px
+              </Label>
+              <div className="flex items-center gap-2">
+                <Slider
+                  min={12}
+                  max={72}
+                  step={1}
+                  value={[settings.categoryFontSize ?? 32]}
+                  onValueChange={(v) => onUpdateSettings({ categoryFontSize: v[0] })}
+                  className="flex-1"
+                />
+                <Input
+                  type="number"
+                  min={12}
+                  max={72}
+                  value={settings.categoryFontSize ?? 32}
+                  onChange={(e) =>
+                    onUpdateSettings({
+                      categoryFontSize: Math.max(12, Math.min(72, Number(e.target.value) || 32)),
+                    })
+                  }
+                  className="w-20"
+                />
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Titles start at this size and only shrink down to fit the tile (never grow above it).
+          </p>
+        </div>
+
         <Tabs defaultValue={categories[0]?.id} key={round.id} className="w-full">
           <TabsList
             className="grid w-full"
