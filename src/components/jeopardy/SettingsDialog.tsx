@@ -290,6 +290,92 @@ export function SettingsDialog({
             />
           </section>
 
+          {/* Custom Sounds */}
+          <section className="space-y-3 border-t-2 border-border pt-4">
+            <div>
+              <Label className="text-base font-bold">Custom Sounds</Label>
+              <p className="text-sm text-muted-foreground">
+                Upload .mp3 or .wav files to replace built-in sounds. Changes apply immediately and persist.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {([
+                { key: "homeMusic", label: "Home / Board Music" },
+                { key: "questionMusic", label: "Question Music" },
+                { key: "ticking", label: "Timer Ticking" },
+                { key: "correct", label: "Correct Answer" },
+                { key: "wrong", label: "Wrong Answer" },
+              ] as const).map((s) => {
+                const cur = settings.customSounds?.[s.key];
+                return (
+                  <div key={s.key} className="border-2 border-border rounded-lg p-3 bg-background/50">
+                    <Label className="font-bold">{s.label}</Label>
+                    <div className="flex flex-wrap gap-2 mt-2 items-center">
+                      <Input
+                        type="file"
+                        accept="audio/mpeg,audio/wav,audio/mp3,.mp3,.wav"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast.error("File too large (max 5MB)");
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const dataUrl = reader.result as string;
+                            onUpdateSettings({
+                              customSounds: {
+                                ...(settings.customSounds ?? {}),
+                                [s.key]: dataUrl,
+                              },
+                            });
+                            toast.success(`${s.label} uploaded`);
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                        className="flex-1 min-w-[180px]"
+                      />
+                      {cur && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              try {
+                                const a = new Audio(cur);
+                                a.volume = settings.volume ?? 0.8;
+                                void a.play();
+                              } catch {}
+                            }}
+                          >
+                            Preview
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const next = { ...(settings.customSounds ?? {}) };
+                              delete (next as any)[s.key];
+                              onUpdateSettings({ customSounds: next });
+                              toast.success(`${s.label} cleared`);
+                            }}
+                            aria-label="Clear sound"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {cur ? "Custom file loaded" : "Using built-in sound"}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
           {/* Host Key Bindings */}
           <section className="space-y-3 border-t-2 border-border pt-4">
             <div>
