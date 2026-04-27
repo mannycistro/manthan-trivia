@@ -158,6 +158,21 @@ const Index = () => {
       ? activeCategory.questions.find((q) => q.id === activeTile.qId) ?? null
       : null;
 
+  // Background music coordination — single track at a time, requires user gesture
+  useEffect(() => {
+    if (!state.soundEnabled) {
+      stopBackground();
+      return;
+    }
+    if (activeTile) {
+      playBackground("questionMusic");
+    } else {
+      playBackground("homeMusic");
+    }
+  }, [activeTile, state.soundEnabled, state.settings.customSounds]);
+
+  useEffect(() => () => stopBackground(), []);
+
   const playClick = () => {
     if (state.soundEnabled) sounds.click();
   };
