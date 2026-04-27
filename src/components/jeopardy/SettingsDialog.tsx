@@ -273,6 +273,67 @@ export function SettingsDialog({
             </div>
           </section>
 
+          {/* Master Volume */}
+          <section className="space-y-2 border-t-2 border-border pt-4">
+            <Label className="text-base font-bold">
+              Master Volume: {Math.round(((settings.volume ?? 0.8) as number) * 100)}%
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Affects all sound effects and the ticking timer.
+            </p>
+            <Slider
+              min={0}
+              max={100}
+              step={1}
+              value={[Math.round(((settings.volume ?? 0.8) as number) * 100)]}
+              onValueChange={(v) => onUpdateSettings({ volume: v[0] / 100 })}
+            />
+          </section>
+
+          {/* Host Key Bindings */}
+          <section className="space-y-3 border-t-2 border-border pt-4">
+            <div>
+              <Label className="text-base font-bold">Host Keyboard Shortcuts</Label>
+              <p className="text-sm text-muted-foreground">
+                Active only on the question screen. Click a field, then press the key to bind it.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {([
+                { key: "correct", label: "Correct answer" },
+                { key: "wrong", label: "Wrong answer" },
+                { key: "reveal", label: "Show answer" },
+              ] as const).map((b) => {
+                const kb =
+                  settings.keyBindings ?? { correct: "y", wrong: "n", reveal: "Space" };
+                const value = (kb as any)[b.key] as string;
+                return (
+                  <div key={b.key}>
+                    <Label>{b.label}</Label>
+                    <Input
+                      readOnly
+                      value={value === " " ? "Space" : value.toUpperCase()}
+                      placeholder="Press a key"
+                      onKeyDown={(e) => {
+                        e.preventDefault();
+                        const k =
+                          e.code === "Space" || e.key === " "
+                            ? "Space"
+                            : e.key.length === 1
+                            ? e.key.toLowerCase()
+                            : e.key;
+                        onUpdateSettings({
+                          keyBindings: { ...kb, [b.key]: k } as any,
+                        });
+                      }}
+                      className="font-mono text-center cursor-pointer"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
           {/* Board Layout (active round) */}
           {activeRound && (
             <section className="space-y-3 border-t-2 border-border pt-4">
