@@ -142,6 +142,12 @@ const Index = () => {
     setMasterVolume(state.soundEnabled ? v : 0);
   }, [state.settings.volume, state.soundEnabled]);
 
+  // Sync uploaded custom sounds with engine
+  useEffect(() => {
+    setCustomSounds(state.settings.customSounds ?? {});
+  }, [state.settings.customSounds]);
+
+
   const activeRound = state.rounds[state.activeRoundIndex] ?? state.rounds[0];
 
   const activeCategory = activeTile
