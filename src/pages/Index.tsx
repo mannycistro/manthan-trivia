@@ -22,7 +22,7 @@ import { RoundSwitcher } from "@/components/jeopardy/RoundSwitcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Settings as SettingsIcon, Volume2, VolumeX, Check } from "lucide-react";
-import { sounds, setMasterVolume } from "@/lib/sounds";
+import { sounds, setMasterVolume, setCustomSounds, playBackground, stopBackground } from "@/lib/sounds";
 import { toast } from "sonner";
 
 const STORAGE_KEY = "jeopardy-game-v1";
@@ -142,6 +142,12 @@ const Index = () => {
     setMasterVolume(state.soundEnabled ? v : 0);
   }, [state.settings.volume, state.soundEnabled]);
 
+  // Sync uploaded custom sounds with engine
+  useEffect(() => {
+    setCustomSounds(state.settings.customSounds ?? {});
+  }, [state.settings.customSounds]);
+
+
   const activeRound = state.rounds[state.activeRoundIndex] ?? state.rounds[0];
 
   const activeCategory = activeTile
@@ -151,6 +157,21 @@ const Index = () => {
     activeTile && activeCategory
       ? activeCategory.questions.find((q) => q.id === activeTile.qId) ?? null
       : null;
+
+  // Background music coordination — single track at a time, requires user gesture
+  useEffect(() => {
+    if (!state.soundEnabled) {
+      stopBackground();
+      return;
+    }
+    if (activeTile) {
+      playBackground("questionMusic");
+    } else {
+      playBackground("homeMusic");
+    }
+  }, [activeTile, state.soundEnabled, state.settings.customSounds]);
+
+  useEffect(() => () => stopBackground(), []);
 
   const playClick = () => {
     if (state.soundEnabled) sounds.click();

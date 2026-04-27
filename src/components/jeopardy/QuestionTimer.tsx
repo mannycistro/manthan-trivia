@@ -1,56 +1,52 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, Timer } from "lucide-react";
+import { Play, Pause, RotateCcw, Square, Timer } from "lucide-react";
 import { sounds } from "@/lib/sounds";
+
+export interface QuestionTimerHandle {
+  pause: () => void;
+  resume: () => void;
+  restart: () => void;
+  stop: () => void;
+}
 
 interface Props {
   initialSeconds?: number;
-  /** When true, the timer is forced to stop and ticking ceases. */
-  stopped?: boolean;
-  /** When true (default), starts running automatically on mount/reset. */
   autoStart?: boolean;
-  /** Whether sounds are globally enabled (controls ticking). */
   soundEnabled?: boolean;
   onTimeout?: () => void;
 }
 
-export function QuestionTimer({
-  initialSeconds = 30,
-  stopped = false,
-  autoStart = true,
-  soundEnabled = true,
-  onTimeout,
-}: Props) {
+export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function QuestionTimer(
+  { initialSeconds = 30, autoStart = true, soundEnabled = true, onTimeout },
+  ref
+) {
   const [seconds, setSeconds] = useState(initialSeconds);
-  const [running, setRunning] = useState(autoStart && initialSeconds > 0 && !stopped);
-  const ref = useRef<number | null>(null);
+  const [running, setRunning] = useState(autoStart && initialSeconds > 0);
+  // Manual override flag: once user interacts, auto behavior won't override
+  const manualRef = useRef(false);
+  const intervalRef = useRef<number | null>(null);
   const firedTimeout = useRef(false);
 
-  // Reset when the configured duration changes (e.g. user updates settings)
+  // Re-init when configured duration changes
   useEffect(() => {
     setSeconds(initialSeconds);
-    setRunning(autoStart && initialSeconds > 0 && !stopped);
+    setRunning(autoStart && initialSeconds > 0);
+    manualRef.current = false;
     firedTimeout.current = false;
-  }, [initialSeconds, autoStart, stopped]);
+  }, [initialSeconds, autoStart]);
 
-  // External stop signal
+  // Ticking sound
   useEffect(() => {
-    if (stopped) setRunning(false);
-  }, [stopped]);
-
-  // Manage ticking sound side-effect
-  useEffect(() => {
-    if (running && soundEnabled) {
-      sounds.startTicking();
-    } else {
-      sounds.stopTicking();
-    }
+    if (running && soundEnabled && seconds > 0) sounds.startTicking();
+    else sounds.stopTicking();
     return () => sounds.stopTicking();
-  }, [running, soundEnabled]);
+  }, [running, soundEnabled, seconds]);
 
+  // Countdown
   useEffect(() => {
     if (running && seconds > 0) {
-      ref.current = window.setTimeout(() => setSeconds((s) => s - 1), 1000);
+      intervalRef.current = window.setTimeout(() => setSeconds((s) => s - 1), 1000);
     } else if (seconds === 0 && !firedTimeout.current) {
       firedTimeout.current = true;
       setRunning(false);
@@ -59,19 +55,59 @@ export function QuestionTimer({
       onTimeout?.();
     }
     return () => {
-      if (ref.current) window.clearTimeout(ref.current);
+      if (intervalRef.current) window.clearTimeout(intervalRef.current);
     };
   }, [running, seconds, onTimeout, soundEnabled]);
 
-  const reset = () => {
-    setRunning(false);
-    setSeconds(initialSeconds);
-    firedTimeout.current = false;
-  };
+  useImperativeHandle(ref, () => ({
+    pause: () => {
+      manualRef.current = true;
+      setRunning(false);
+      sounds.stopTicking();
+    },
+    resume: () => {
+      manualRef.current = true;
+      if (seconds > 0) setRunning(true);
+    },
+    restart: () => {
+      manualRef.current = true;
+      firedTimeout.current = false;
+      setSeconds(initialSeconds);
+      setRunning(initialSeconds > 0);
+    },
+    stop: () => {
+      manualRef.current = true;
+      setRunning(false);
+      sounds.stopTicking();
+    },
+  }), [seconds, initialSeconds]);
 
   const danger = seconds <= 5 && seconds > 0;
 
   if (initialSeconds <= 0) return null;
+
+  const handlePause = () => {
+    manualRef.current = true;
+    setRunning(false);
+    sounds.stopTicking();
+  };
+  const handleResume = () => {
+    manualRef.current = true;
+    if (seconds > 0) setRunning(true);
+  };
+  const handleRestart = () => {
+    manualRef.current = true;
+    firedTimeout.current = false;
+    setSeconds(initialSeconds);
+    setRunning(initialSeconds > 0);
+  };
+  const handleStop = () => {
+    manualRef.current = true;
+    setRunning(false);
+    setSeconds(initialSeconds);
+    firedTimeout.current = false;
+    sounds.stopTicking();
+  };
 
   return (
     <div className="flex items-center gap-3 bg-card/80 border-2 border-border rounded-xl px-4 py-2">
@@ -88,16 +124,19 @@ export function QuestionTimer({
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => setRunning((r) => !r)}
-          disabled={stopped || seconds === 0}
-          aria-label={running ? "Pause timer" : "Start timer"}
+          onClick={running ? handlePause : handleResume}
+          disabled={seconds === 0}
+          aria-label={running ? "Pause timer" : "Resume timer"}
         >
           {running ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         </Button>
-        <Button size="sm" variant="secondary" onClick={reset} aria-label="Reset timer">
+        <Button size="sm" variant="secondary" onClick={handleRestart} aria-label="Restart timer">
           <RotateCcw className="w-4 h-4" />
+        </Button>
+        <Button size="sm" variant="secondary" onClick={handleStop} aria-label="Stop timer">
+          <Square className="w-4 h-4" />
         </Button>
       </div>
     </div>
   );
-}
+});

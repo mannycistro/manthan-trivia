@@ -1,8 +1,8 @@
 import { Category, KeyBindings, Question } from "@/types/jeopardy";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Eye, Check, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { QuestionTimer } from "./QuestionTimer";
+import { ArrowLeft, Check, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { QuestionTimer, QuestionTimerHandle } from "./QuestionTimer";
 import { sounds } from "@/lib/sounds";
 
 interface Props {
@@ -54,10 +54,10 @@ export function QuestionView({
   onBack,
 }: Props) {
   const [revealed, setRevealed] = useState(false);
-  const [timerStopped, setTimerStopped] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const timerRef = useRef<QuestionTimerHandle>(null);
 
-  // Stop ticking when leaving question view
+  // Stop ticking when leaving
   useEffect(() => {
     return () => {
       sounds.stopTicking();
@@ -69,14 +69,14 @@ export function QuestionView({
       if (!r && soundEnabled) sounds.reveal();
       return true;
     });
-    setTimerStopped(true);
+    timerRef.current?.stop();
     sounds.stopTicking();
   }, [soundEnabled]);
 
   const markCorrect = useCallback(() => {
     if (soundEnabled) sounds.correct();
     setFeedback("correct");
-    setTimerStopped(true);
+    timerRef.current?.stop();
     sounds.stopTicking();
     setRevealed(true);
   }, [soundEnabled]);
@@ -84,7 +84,9 @@ export function QuestionView({
   const markWrong = useCallback(() => {
     if (soundEnabled) sounds.wrong();
     setFeedback("wrong");
-    // Timer keeps running per spec
+    // Critical fix: stop timer and ticking on wrong answer
+    timerRef.current?.stop();
+    sounds.stopTicking();
   }, [soundEnabled]);
 
   const back = () => {
@@ -93,17 +95,16 @@ export function QuestionView({
     onBack();
   };
 
-  // Auto-clear feedback overlay after a moment
   useEffect(() => {
     if (!feedback) return;
     const t = window.setTimeout(() => setFeedback(null), 1200);
     return () => window.clearTimeout(t);
   }, [feedback]);
 
-  // Keyboard host controls — only active in question view
+  // Keyboard host controls (hidden from UI but functional)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.repeat) return; // prevent key-hold repeats
+      if (e.repeat) return;
       const target = e.target as HTMLElement | null;
       if (target) {
         const tag = target.tagName;
@@ -172,8 +173,6 @@ export function QuestionView({
     return null;
   };
 
-  const fmtKey = (k: string) => (k === " " || k === "Space" ? "Space" : k.toUpperCase());
-
   return (
     <div className="animate-fade-in min-h-[80vh] flex flex-col relative">
       {/* Header bar */}
@@ -191,15 +190,15 @@ export function QuestionView({
           </span>
         </div>
         <QuestionTimer
+          ref={timerRef}
           initialSeconds={timerSeconds}
-          stopped={timerStopped}
           autoStart
           soundEnabled={soundEnabled}
-          onTimeout={() => setTimerStopped(true)}
+          onTimeout={() => {}}
         />
       </div>
 
-      {/* Main panel */}
+      {/* Main panel — player-facing only (no host buttons or shortcut hints) */}
       <div className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-5xl bg-accent/90 border-4 border-primary/40 rounded-3xl p-6 md:p-12 shadow-glow text-center max-h-[75vh] overflow-y-auto">
           {renderMedia() && <div className="mb-6">{renderMedia()}</div>}
@@ -216,40 +215,6 @@ export function QuestionView({
               </p>
             </div>
           )}
-
-          {!revealed && (
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-              <Button
-                size="lg"
-                onClick={reveal}
-                className="font-display text-xl md:text-2xl px-8 py-6 bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow"
-              >
-                <Eye className="w-6 h-6 mr-2" /> Show Answer
-              </Button>
-              <Button
-                size="lg"
-                variant="secondary"
-                onClick={markCorrect}
-                className="font-bold text-lg px-6 py-6"
-              >
-                <Check className="w-5 h-5 mr-2 text-green-500" /> Correct
-              </Button>
-              <Button
-                size="lg"
-                variant="secondary"
-                onClick={markWrong}
-                className="font-bold text-lg px-6 py-6"
-              >
-                <X className="w-5 h-5 mr-2 text-destructive" /> Wrong
-              </Button>
-            </div>
-          )}
-
-          <p className="mt-6 text-xs text-muted-foreground">
-            Host shortcuts — Correct: <kbd className="px-1.5 py-0.5 rounded border border-border bg-card font-mono">{fmtKey(keyBindings.correct)}</kbd>{" "}
-            · Wrong: <kbd className="px-1.5 py-0.5 rounded border border-border bg-card font-mono">{fmtKey(keyBindings.wrong)}</kbd>{" "}
-            · Show Answer: <kbd className="px-1.5 py-0.5 rounded border border-border bg-card font-mono">{fmtKey(keyBindings.reveal)}</kbd>
-          </p>
         </div>
       </div>
 
