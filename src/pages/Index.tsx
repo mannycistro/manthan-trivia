@@ -22,7 +22,7 @@ import { RoundSwitcher } from "@/components/jeopardy/RoundSwitcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Settings as SettingsIcon, Volume2, VolumeX, Check } from "lucide-react";
-import { sounds, setMasterVolume } from "@/lib/sounds";
+import { sounds, setMasterVolume, setCustomSounds, playBackground, stopBackground } from "@/lib/sounds";
 import { toast } from "sonner";
 
 const STORAGE_KEY = "jeopardy-game-v1";
