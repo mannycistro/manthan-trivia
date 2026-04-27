@@ -31,6 +31,14 @@ export interface KeyBindings {
   reveal: string;
 }
 
+export interface CustomSounds {
+  homeMusic?: string;     // data URL
+  questionMusic?: string;
+  ticking?: string;
+  correct?: string;
+  wrong?: string;
+}
+
 export interface GameSettings {
   currency: string;
   timerSeconds: number;
@@ -38,6 +46,7 @@ export interface GameSettings {
   categoryFontSize?: number; // base (max) px
   volume?: number; // 0..1 master volume
   keyBindings?: KeyBindings;
+  customSounds?: CustomSounds;
 }
 
 export interface Round {

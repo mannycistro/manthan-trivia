@@ -1,20 +1,86 @@
-// Lightweight sound effects using WebAudio (no external assets)
+// Sound engine: WebAudio fallbacks + custom HTMLAudio overrides.
+// Single background track at a time, non-overlapping ticking.
+
 let ctx: AudioContext | null = null;
 function getCtx() {
   if (!ctx) ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
   return ctx;
 }
 
-// Master volume (0..1). Applied to every sound.
 let masterVolume = 0.8;
 export function setMasterVolume(v: number) {
   masterVolume = Math.max(0, Math.min(1, v));
   if (tickingMaster) tickingMaster.gain.value = masterVolume;
+  if (currentBg) currentBg.volume = masterVolume * 0.5;
+  if (customTickAudio) customTickAudio.volume = masterVolume;
 }
 export function getMasterVolume() {
   return masterVolume;
 }
 
+// ---- Custom sound registry (data URLs from uploads)
+export type SoundKey =
+  | "homeMusic"
+  | "questionMusic"
+  | "ticking"
+  | "correct"
+  | "wrong";
+
+let customSounds: Partial<Record<SoundKey, string>> = {};
+export function setCustomSounds(map: Partial<Record<SoundKey, string>>) {
+  customSounds = { ...map };
+  // If ticking is currently playing and a custom is set/cleared, restart loop
+  if (tickingTimer != null || customTickAudio) {
+    sounds.stopTicking();
+    sounds.startTicking();
+  }
+}
+
+function playCustom(key: SoundKey, loop = false, volumeScale = 1): HTMLAudioElement | null {
+  const src = customSounds[key];
+  if (!src) return null;
+  try {
+    const a = new Audio(src);
+    a.loop = loop;
+    a.volume = Math.max(0, Math.min(1, masterVolume * volumeScale));
+    void a.play().catch(() => {});
+    return a;
+  } catch {
+    return null;
+  }
+}
+
+// ---- Background music (single track)
+let currentBg: HTMLAudioElement | null = null;
+let currentBgKey: SoundKey | null = null;
+
+export function playBackground(key: "homeMusic" | "questionMusic") {
+  if (currentBgKey === key && currentBg) return; // already playing
+  stopBackground();
+  const src = customSounds[key];
+  if (!src) return; // no custom track => silent (no built-in music)
+  try {
+    const a = new Audio(src);
+    a.loop = true;
+    a.volume = masterVolume * 0.5;
+    void a.play().catch(() => {});
+    currentBg = a;
+    currentBgKey = key;
+  } catch {}
+}
+
+export function stopBackground() {
+  if (currentBg) {
+    try {
+      currentBg.pause();
+      currentBg.currentTime = 0;
+    } catch {}
+    currentBg = null;
+    currentBgKey = null;
+  }
+}
+
+// ---- WebAudio tone helper
 function tone(freq: number, duration: number, type: OscillatorType = "sine", gain = 0.15, when = 0) {
   const c = getCtx();
   const o = c.createOscillator();
@@ -29,9 +95,10 @@ function tone(freq: number, duration: number, type: OscillatorType = "sine", gai
   o.stop(c.currentTime + when + duration);
 }
 
-// ---- Ticking loop (non-overlapping)
+// ---- Ticking
 let tickingTimer: number | null = null;
 let tickingMaster: GainNode | null = null;
+let customTickAudio: HTMLAudioElement | null = null;
 
 function playTickOnce() {
   try {
@@ -60,6 +127,7 @@ export const sounds = {
     try { tone(600, 0.08, "square", 0.08); } catch {}
   },
   correct() {
+    if (playCustom("correct")) return;
     try {
       tone(523.25, 0.15, "sine", 0.25, 0);
       tone(659.25, 0.15, "sine", 0.25, 0.12);
@@ -67,6 +135,7 @@ export const sounds = {
     } catch {}
   },
   wrong() {
+    if (playCustom("wrong")) return;
     try {
       tone(220, 0.2, "sawtooth", 0.22, 0);
       tone(150, 0.35, "sawtooth", 0.22, 0.18);
@@ -79,7 +148,17 @@ export const sounds = {
     } catch {}
   },
   startTicking() {
-    if (tickingTimer != null) return; // prevent overlap
+    if (tickingTimer != null || customTickAudio) return;
+    if (customSounds.ticking) {
+      try {
+        const a = new Audio(customSounds.ticking);
+        a.loop = true;
+        a.volume = masterVolume;
+        void a.play().catch(() => {});
+        customTickAudio = a;
+        return;
+      } catch {}
+    }
     playTickOnce();
     tickingTimer = window.setInterval(playTickOnce, 1000);
   },
@@ -88,11 +167,22 @@ export const sounds = {
       window.clearInterval(tickingTimer);
       tickingTimer = null;
     }
+    if (customTickAudio) {
+      try {
+        customTickAudio.pause();
+        customTickAudio.currentTime = 0;
+      } catch {}
+      customTickAudio = null;
+    }
     if (tickingMaster) {
       try {
         const c = getCtx();
         tickingMaster.gain.cancelScheduledValues(c.currentTime);
         tickingMaster.gain.setValueAtTime(0, c.currentTime);
+        // reset for next start
+        window.setTimeout(() => {
+          if (tickingMaster) tickingMaster.gain.setValueAtTime(masterVolume, getCtx().currentTime);
+        }, 100);
       } catch {}
     }
   },
