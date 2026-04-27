@@ -22,17 +22,21 @@ import { RoundSwitcher } from "@/components/jeopardy/RoundSwitcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Settings as SettingsIcon, Volume2, VolumeX, Check } from "lucide-react";
-import { sounds } from "@/lib/sounds";
+import { sounds, setMasterVolume } from "@/lib/sounds";
 import { toast } from "sonner";
 
 const STORAGE_KEY = "jeopardy-game-v1";
 const MODULES_KEY = "jeopardy-modules-v1";
+
+const DEFAULT_KEYBINDINGS = { correct: "y", wrong: "n", reveal: "Space" } as const;
 
 const DEFAULT_SETTINGS: GameSettings = {
   currency: "$",
   timerSeconds: 30,
   categoryFontFamily: "Montserrat",
   categoryFontSize: 32,
+  volume: 0.8,
+  keyBindings: { ...DEFAULT_KEYBINDINGS },
 };
 
 function migrateRounds(parsed: any): Round[] | null {
@@ -131,6 +135,12 @@ const Index = () => {
   useEffect(() => {
     localStorage.setItem(MODULES_KEY, JSON.stringify(modules));
   }, [modules]);
+
+  // Apply master volume / mute to sound engine
+  useEffect(() => {
+    const v = state.settings.volume ?? 0.8;
+    setMasterVolume(state.soundEnabled ? v : 0);
+  }, [state.settings.volume, state.soundEnabled]);
 
   const activeRound = state.rounds[state.activeRoundIndex] ?? state.rounds[0];
 
@@ -490,6 +500,7 @@ const Index = () => {
               soundEnabled={state.soundEnabled}
               currency={state.settings.currency}
               timerSeconds={state.settings.timerSeconds}
+              keyBindings={state.settings.keyBindings ?? { ...DEFAULT_KEYBINDINGS }}
               onBack={onBack}
             />
           </div>

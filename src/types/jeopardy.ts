@@ -25,11 +25,19 @@ export interface Team {
   score: number;
 }
 
+export interface KeyBindings {
+  correct: string;
+  wrong: string;
+  reveal: string;
+}
+
 export interface GameSettings {
   currency: string;
   timerSeconds: number;
   categoryFontFamily?: string;
   categoryFontSize?: number; // base (max) px
+  volume?: number; // 0..1 master volume
+  keyBindings?: KeyBindings;
 }
 
 export interface Round {
