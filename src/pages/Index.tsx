@@ -468,7 +468,7 @@ const Index = () => {
             </div>
           ) : (
             <>
-              <h1 className="font-display text-3xl md:text-5xl gold-gradient text-shadow-jeopardy break-words">
+              <h1 className="font-display text-2xl md:text-3xl gold-gradient text-shadow-jeopardy break-words leading-none">
                 {state.gameName}
               </h1>
               <Button
