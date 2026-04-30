@@ -84,7 +84,7 @@ export function playBackground(key: "homeMusic" | "questionMusic") {
   try {
     const a = new Audio(src);
     a.loop = true;
-    a.volume = masterVolume * 0.5;
+    a.volume = masterVolume * currentBgScale;
     void a.play().catch(() => {});
     currentBg = a;
     currentBgKey = key;
