@@ -55,15 +55,17 @@ export function RoundSwitcher({ rounds, activeIndex, onChange, onAddRound }: Pro
       >
         <ChevronRight className="w-4 h-4" />
       </Button>
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={onAddRound}
-        className="h-8 font-bold"
-        aria-label="Add round"
-      >
-        <Plus className="w-4 h-4 mr-1" /> Round
-      </Button>
+      {onAddRound && (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onAddRound}
+          className="h-8 font-bold"
+          aria-label="Add round"
+        >
+          <Plus className="w-4 h-4 mr-1" /> Round
+        </Button>
+      )}
     </div>
   );
 }
