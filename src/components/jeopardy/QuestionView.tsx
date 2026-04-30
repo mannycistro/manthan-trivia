@@ -4,6 +4,7 @@ import { ArrowLeft, Check, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QuestionTimer, QuestionTimerHandle } from "./QuestionTimer";
 import { sounds } from "@/lib/sounds";
+import { playBackground } from "@/lib/sounds";
 
 interface Props {
   category: Category;
