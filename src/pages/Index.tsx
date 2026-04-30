@@ -526,7 +526,7 @@ const Index = () => {
             />
           </div>
         ) : activeRound ? (
-          <div className="animate-fade-in flex-1 min-h-0">
+          <div className="animate-fade-in flex-1 min-h-0 h-full">
             <GameBoard
               round={activeRound}
               currency={state.settings.currency}
