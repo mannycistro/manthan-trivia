@@ -172,7 +172,6 @@ export const sounds = {
       tone(660, 0.2, "triangle", 0.18, 0.08);
     } catch {}
   },
-  },
   startTicking() {
     if (tickingTimer != null || customTickAudio) return;
     if (customSounds.ticking) {
