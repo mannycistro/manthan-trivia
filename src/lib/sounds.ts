@@ -11,8 +11,30 @@ let masterVolume = 0.8;
 export function setMasterVolume(v: number) {
   masterVolume = Math.max(0, Math.min(1, v));
   if (tickingMaster) tickingMaster.gain.value = masterVolume;
-  if (currentBg) currentBg.volume = masterVolume * 0.5;
+  if (currentBg) currentBg.volume = masterVolume * currentBgScale;
   if (customTickAudio) customTickAudio.volume = masterVolume;
+}
+
+// Ducking: temporarily lower background music volume for sound effects
+let currentBgScale = 0.5;
+let duckTimer: number | null = null;
+export function duckBackground(duration = 600, scale = 0.15) {
+  if (!currentBg) return;
+  if (duckTimer != null) {
+    window.clearTimeout(duckTimer);
+    duckTimer = null;
+  }
+  try {
+    currentBg.volume = masterVolume * scale;
+  } catch {}
+  duckTimer = window.setTimeout(() => {
+    if (currentBg) {
+      try {
+        currentBg.volume = masterVolume * currentBgScale;
+      } catch {}
+    }
+    duckTimer = null;
+  }, duration);
 }
 export function getMasterVolume() {
   return masterVolume;
@@ -62,7 +84,7 @@ export function playBackground(key: "homeMusic" | "questionMusic") {
   try {
     const a = new Audio(src);
     a.loop = true;
-    a.volume = masterVolume * 0.5;
+    a.volume = masterVolume * currentBgScale;
     void a.play().catch(() => {});
     currentBg = a;
     currentBgKey = key;
@@ -127,6 +149,7 @@ export const sounds = {
     try { tone(600, 0.08, "square", 0.08); } catch {}
   },
   correct() {
+    duckBackground(800, 0.12);
     if (playCustom("correct")) return;
     try {
       tone(523.25, 0.15, "sine", 0.25, 0);
@@ -135,6 +158,7 @@ export const sounds = {
     } catch {}
   },
   wrong() {
+    duckBackground(700, 0.15);
     if (playCustom("wrong")) return;
     try {
       tone(220, 0.2, "sawtooth", 0.22, 0);
@@ -142,6 +166,7 @@ export const sounds = {
     } catch {}
   },
   reveal() {
+    duckBackground(500, 0.15);
     try {
       tone(440, 0.1, "triangle", 0.18, 0);
       tone(660, 0.2, "triangle", 0.18, 0.08);

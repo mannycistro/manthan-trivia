@@ -4,6 +4,7 @@ import { ArrowLeft, Check, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QuestionTimer, QuestionTimerHandle } from "./QuestionTimer";
 import { sounds } from "@/lib/sounds";
+import { playBackground } from "@/lib/sounds";
 
 interface Props {
   category: Category;
@@ -57,8 +58,10 @@ export function QuestionView({
   const [feedback, setFeedback] = useState<Feedback>(null);
   const timerRef = useRef<QuestionTimerHandle>(null);
 
-  // Stop ticking when leaving
+  // Start question music immediately when question screen appears.
+  // Stop ticking on unmount (music transition handled by parent / back).
   useEffect(() => {
+    playBackground("questionMusic");
     return () => {
       sounds.stopTicking();
     };
@@ -71,6 +74,8 @@ export function QuestionView({
     });
     timerRef.current?.stop();
     sounds.stopTicking();
+    // Stop question music on Show Answer
+    playBackground("homeMusic");
   }, [soundEnabled]);
 
   const markCorrect = useCallback(() => {
@@ -79,12 +84,14 @@ export function QuestionView({
     timerRef.current?.stop();
     sounds.stopTicking();
     setRevealed(true);
+    // Stop question music on Correct
+    playBackground("homeMusic");
   }, [soundEnabled]);
 
   const markWrong = useCallback(() => {
     if (soundEnabled) sounds.wrong();
     setFeedback("wrong");
-    // Critical fix: stop timer and ticking on wrong answer
+    // Stop timer and ticking on wrong answer, but KEEP question music playing
     timerRef.current?.stop();
     sounds.stopTicking();
   }, [soundEnabled]);
@@ -92,6 +99,7 @@ export function QuestionView({
   const back = () => {
     if (soundEnabled) sounds.click();
     sounds.stopTicking();
+    playBackground("homeMusic");
     onBack();
   };
 
