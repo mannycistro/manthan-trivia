@@ -13,7 +13,7 @@ interface Props {
   rounds: Round[];
   activeIndex: number;
   onChange: (index: number) => void;
-  onAddRound: () => void;
+  onAddRound?: () => void;
 }
 
 export function RoundSwitcher({ rounds, activeIndex, onChange, onAddRound }: Props) {
