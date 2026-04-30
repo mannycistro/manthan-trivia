@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   GameSettings,
   GameState,
@@ -21,7 +21,7 @@ import { SettingsDialog } from "@/components/jeopardy/SettingsDialog";
 import { RoundSwitcher } from "@/components/jeopardy/RoundSwitcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Settings as SettingsIcon, Volume2, VolumeX, Check } from "lucide-react";
+import { Pencil, Settings as SettingsIcon, Volume2, VolumeX, Check, Home, Play } from "lucide-react";
 import { sounds, setMasterVolume, setCustomSounds, playBackground, stopBackground } from "@/lib/sounds";
 import { toast } from "sonner";
 
