@@ -436,9 +436,9 @@ const Index = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col px-3 md:px-6 pt-3 md:pt-4 overflow-hidden">
+    <div className="h-screen flex flex-col px-2 md:px-4 pt-1 md:pt-2 overflow-hidden">
       {/* Top bar */}
-      <header className="flex flex-wrap items-center justify-between gap-3 mb-3 md:mb-4 shrink-0">
+      <header className="flex flex-wrap items-center justify-between gap-1 mb-1 md:mb-1.5 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           {editingName ? (
             <div className="flex items-center gap-2">
@@ -451,7 +451,7 @@ const Index = () => {
                     setEditingName(false);
                   }
                 }}
-                className="font-display text-2xl md:text-4xl h-12 md:h-14 min-w-[200px] md:min-w-[400px]"
+                className="font-display text-xl md:text-2xl h-8 md:h-10 min-w-[200px] md:min-w-[400px]"
                 autoFocus
               />
               <Button
@@ -468,7 +468,7 @@ const Index = () => {
             </div>
           ) : (
             <>
-              <h1 className="font-display text-3xl md:text-5xl gold-gradient text-shadow-jeopardy break-words">
+              <h1 className="font-display text-2xl md:text-3xl gold-gradient text-shadow-jeopardy break-words leading-none">
                 {state.gameName}
               </h1>
               <Button
@@ -512,7 +512,7 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 flex flex-col pb-2">
+      <main className="flex-1 min-h-0 flex flex-col pb-1">
         {activeQuestion && activeCategory ? (
           <div className="flex-1 min-h-0 overflow-y-auto">
             <QuestionView
@@ -526,7 +526,7 @@ const Index = () => {
             />
           </div>
         ) : activeRound ? (
-          <div className="animate-fade-in flex-1 min-h-0">
+          <div className="animate-fade-in flex-1 min-h-0 h-full">
             <GameBoard
               round={activeRound}
               currency={state.settings.currency}
@@ -541,7 +541,7 @@ const Index = () => {
       </main>
 
       {/* Sticky horizontal scoreboard */}
-      <div className="shrink-0 -mx-3 md:-mx-6 mt-auto">
+      <div className="shrink-0 -mx-2 md:-mx-4 mt-auto">
         <ScoreboardBar
           teams={state.teams}
           onUpdateName={updateTeamName}
