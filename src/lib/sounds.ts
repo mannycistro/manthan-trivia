@@ -11,8 +11,30 @@ let masterVolume = 0.8;
 export function setMasterVolume(v: number) {
   masterVolume = Math.max(0, Math.min(1, v));
   if (tickingMaster) tickingMaster.gain.value = masterVolume;
-  if (currentBg) currentBg.volume = masterVolume * 0.5;
+  if (currentBg) currentBg.volume = masterVolume * currentBgScale;
   if (customTickAudio) customTickAudio.volume = masterVolume;
+}
+
+// Ducking: temporarily lower background music volume for sound effects
+let currentBgScale = 0.5;
+let duckTimer: number | null = null;
+export function duckBackground(duration = 600, scale = 0.15) {
+  if (!currentBg) return;
+  if (duckTimer != null) {
+    window.clearTimeout(duckTimer);
+    duckTimer = null;
+  }
+  try {
+    currentBg.volume = masterVolume * scale;
+  } catch {}
+  duckTimer = window.setTimeout(() => {
+    if (currentBg) {
+      try {
+        currentBg.volume = masterVolume * currentBgScale;
+      } catch {}
+    }
+    duckTimer = null;
+  }, duration);
 }
 export function getMasterVolume() {
   return masterVolume;
