@@ -84,12 +84,14 @@ export function QuestionView({
     timerRef.current?.stop();
     sounds.stopTicking();
     setRevealed(true);
+    // Stop question music on Correct
+    playBackground("homeMusic");
   }, [soundEnabled]);
 
   const markWrong = useCallback(() => {
     if (soundEnabled) sounds.wrong();
     setFeedback("wrong");
-    // Critical fix: stop timer and ticking on wrong answer
+    // Stop timer and ticking on wrong answer, but KEEP question music playing
     timerRef.current?.stop();
     sounds.stopTicking();
   }, [soundEnabled]);
@@ -97,6 +99,7 @@ export function QuestionView({
   const back = () => {
     if (soundEnabled) sounds.click();
     sounds.stopTicking();
+    playBackground("homeMusic");
     onBack();
   };
 
