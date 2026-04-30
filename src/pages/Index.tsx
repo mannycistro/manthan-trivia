@@ -597,7 +597,7 @@ const Index = () => {
         />
       </div>
 
-      {activeRound && (
+      {!playMode && activeRound && (
         <EditPanel
           open={editOpen}
           onOpenChange={setEditOpen}
@@ -618,28 +618,30 @@ const Index = () => {
         />
       )}
 
-      <SettingsDialog
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        settings={state.settings}
-        onUpdateSettings={updateSettings}
-        gameName={state.gameName}
-        onSetGameName={setGameName}
-        rounds={state.rounds}
-        activeRoundIndex={state.activeRoundIndex}
-        onSetActiveRound={setActiveRound}
-        onAddRound={addRound}
-        onRenameRound={renameRound}
-        onDuplicateRound={duplicateRound}
-        onDeleteRound={deleteRound}
-        onMoveRound={moveRound}
-        onSetRoundLayout={setRoundLayout}
-        onRescaleRound={rescaleActiveRound}
-        savedModules={modules}
-        onSaveModule={saveModule}
-        onLoadModule={loadModule}
-        onDeleteModule={deleteModule}
-      />
+      {!playMode && (
+        <SettingsDialog
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          settings={state.settings}
+          onUpdateSettings={updateSettings}
+          gameName={state.gameName}
+          onSetGameName={setGameName}
+          rounds={state.rounds}
+          activeRoundIndex={state.activeRoundIndex}
+          onSetActiveRound={setActiveRound}
+          onAddRound={addRound}
+          onRenameRound={renameRound}
+          onDuplicateRound={duplicateRound}
+          onDeleteRound={deleteRound}
+          onMoveRound={moveRound}
+          onSetRoundLayout={setRoundLayout}
+          onRescaleRound={rescaleActiveRound}
+          savedModules={modules}
+          onSaveModule={saveModule}
+          onLoadModule={loadModule}
+          onDeleteModule={deleteModule}
+        />
+      )}
     </div>
   );
 };
