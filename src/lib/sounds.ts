@@ -149,6 +149,7 @@ export const sounds = {
     try { tone(600, 0.08, "square", 0.08); } catch {}
   },
   correct() {
+    duckBackground(800, 0.12);
     if (playCustom("correct")) return;
     try {
       tone(523.25, 0.15, "sine", 0.25, 0);
@@ -157,6 +158,7 @@ export const sounds = {
     } catch {}
   },
   wrong() {
+    duckBackground(700, 0.15);
     if (playCustom("wrong")) return;
     try {
       tone(220, 0.2, "sawtooth", 0.22, 0);
