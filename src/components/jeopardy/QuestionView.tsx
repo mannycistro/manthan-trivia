@@ -58,8 +58,10 @@ export function QuestionView({
   const [feedback, setFeedback] = useState<Feedback>(null);
   const timerRef = useRef<QuestionTimerHandle>(null);
 
-  // Stop ticking when leaving
+  // Start question music immediately when question screen appears.
+  // Stop ticking on unmount (music transition handled by parent / back).
   useEffect(() => {
+    playBackground("questionMusic");
     return () => {
       sounds.stopTicking();
     };
@@ -72,6 +74,8 @@ export function QuestionView({
     });
     timerRef.current?.stop();
     sounds.stopTicking();
+    // Stop question music on Show Answer
+    playBackground("homeMusic");
   }, [soundEnabled]);
 
   const markCorrect = useCallback(() => {
