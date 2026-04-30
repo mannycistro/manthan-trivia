@@ -541,7 +541,7 @@ const Index = () => {
       </main>
 
       {/* Sticky horizontal scoreboard */}
-      <div className="shrink-0 -mx-3 md:-mx-6 mt-auto">
+      <div className="shrink-0 -mx-2 md:-mx-4 mt-auto">
         <ScoreboardBar
           teams={state.teams}
           onUpdateName={updateTeamName}
