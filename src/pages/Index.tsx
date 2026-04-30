@@ -127,6 +127,29 @@ const Index = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(state.gameName);
+  const [playMode, setPlayMode] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-hide cursor in play mode after 2.5s of inactivity
+  useEffect(() => {
+    if (!playMode) return;
+    let timer: number;
+    const hide = () => {
+      if (containerRef.current) containerRef.current.style.cursor = "none";
+    };
+    const show = () => {
+      if (containerRef.current) containerRef.current.style.cursor = "";
+      clearTimeout(timer);
+      timer = window.setTimeout(hide, 2500);
+    };
+    show();
+    window.addEventListener("mousemove", show);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("mousemove", show);
+      if (containerRef.current) containerRef.current.style.cursor = "";
+    };
+  }, [playMode]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
