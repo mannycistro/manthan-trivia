@@ -459,11 +459,25 @@ const Index = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col px-2 md:px-4 pt-1 md:pt-2 overflow-hidden">
+    <div ref={containerRef} className="h-screen flex flex-col px-2 md:px-4 pt-1 md:pt-2 overflow-hidden">
       {/* Top bar */}
       <header className="flex flex-wrap items-center justify-between gap-1 mb-1 md:mb-1.5 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          {editingName ? (
+          {playMode ? (
+            <>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => { setPlayMode(false); setActiveTile(null); }}
+                aria-label="Back to Home"
+              >
+                <Home className="w-5 h-5" />
+              </Button>
+              <h1 className="font-display text-2xl md:text-3xl gold-gradient text-shadow-jeopardy break-words leading-none">
+                {state.gameName}
+              </h1>
+            </>
+          ) : editingName ? (
             <div className="flex items-center gap-2">
               <Input
                 value={nameDraft}
@@ -515,23 +529,32 @@ const Index = () => {
               rounds={state.rounds}
               activeIndex={state.activeRoundIndex}
               onChange={setActiveRound}
-              onAddRound={addRound}
+              onAddRound={playMode ? undefined : addRound}
             />
           )}
-          <Button
-            variant="secondary"
-            size="icon"
-            onClick={() => setState((s) => ({ ...s, soundEnabled: !s.soundEnabled }))}
-            aria-label="Toggle sound"
-          >
-            {state.soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-          </Button>
-          <Button variant="secondary" onClick={() => setSettingsOpen(true)} className="font-bold">
-            <SettingsIcon className="w-4 h-4 mr-2" /> Settings
-          </Button>
-          <Button onClick={() => setEditOpen(true)} className="font-bold">
-            <Pencil className="w-4 h-4 mr-2" /> Edit Game
-          </Button>
+          {!playMode && (
+            <>
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={() => setState((s) => ({ ...s, soundEnabled: !s.soundEnabled }))}
+                aria-label="Toggle sound"
+              >
+                {state.soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </Button>
+              <Button variant="secondary" onClick={() => setSettingsOpen(true)} className="font-bold">
+                <SettingsIcon className="w-4 h-4 mr-2" /> Settings
+              </Button>
+              <Button onClick={() => setEditOpen(true)} className="font-bold">
+                <Pencil className="w-4 h-4 mr-2" /> Edit Game
+              </Button>
+            </>
+          )}
+          {!playMode && (
+            <Button onClick={() => setPlayMode(true)} variant="default" className="font-bold">
+              <Play className="w-4 h-4 mr-2" /> Play
+            </Button>
+          )}
         </div>
       </header>
 
