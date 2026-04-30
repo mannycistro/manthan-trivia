@@ -166,10 +166,12 @@ export const sounds = {
     } catch {}
   },
   reveal() {
+    duckBackground(500, 0.15);
     try {
       tone(440, 0.1, "triangle", 0.18, 0);
       tone(660, 0.2, "triangle", 0.18, 0.08);
     } catch {}
+  },
   },
   startTicking() {
     if (tickingTimer != null || customTickAudio) return;
