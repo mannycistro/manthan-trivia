@@ -451,7 +451,7 @@ const Index = () => {
                     setEditingName(false);
                   }
                 }}
-                className="font-display text-2xl md:text-4xl h-12 md:h-14 min-w-[200px] md:min-w-[400px]"
+                className="font-display text-xl md:text-2xl h-8 md:h-10 min-w-[200px] md:min-w-[400px]"
                 autoFocus
               />
               <Button
