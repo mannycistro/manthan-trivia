@@ -474,7 +474,7 @@ const Index = ({ mode }: IndexProps) => {
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={() => { setPlayMode(false); setActiveTile(null); }}
+                onClick={() => { setActiveTile(null); navigate("/"); }}
                 aria-label="Back to Home"
               >
                 <Home className="w-5 h-5" />
@@ -557,8 +557,13 @@ const Index = ({ mode }: IndexProps) => {
             </>
           )}
           {!playMode && (
-            <Button onClick={() => setPlayMode(true)} variant="default" className="font-bold">
+            <Button onClick={() => navigate("/play")} variant="default" className="font-bold">
               <Play className="w-4 h-4 mr-2" /> Play
+            </Button>
+          )}
+          {!playMode && (
+            <Button onClick={() => navigate("/")} variant="ghost" className="font-bold">
+              <Home className="w-4 h-4 mr-2" /> Home
             </Button>
           )}
         </div>
