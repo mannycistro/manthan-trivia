@@ -16,12 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { GameSettings, Round, SavedGameModule } from "@/types/jeopardy";
+import { GameSettings, Round } from "@/types/jeopardy";
 import { useState } from "react";
 import {
-  Save,
   Trash2,
-  FolderOpen,
   Copy,
   ArrowUp,
   ArrowDown,
@@ -49,11 +47,6 @@ interface Props {
   onMoveRound: (idx: number, dir: -1 | 1) => void;
   onSetRoundLayout: (rows: number, cols: number, baseValue: number, valueStep: number) => void;
   onRescaleRound: (baseValue: number, valueStep: number) => void;
-
-  savedModules: SavedGameModule[];
-  onSaveModule: (name: string) => void;
-  onLoadModule: (id: string) => void;
-  onDeleteModule: (id: string) => void;
 }
 
 const NONE_VALUE = "__none__";
@@ -95,12 +88,7 @@ export function SettingsDialog({
   onMoveRound,
   onSetRoundLayout,
   onRescaleRound,
-  savedModules,
-  onSaveModule,
-  onLoadModule,
-  onDeleteModule,
 }: Props) {
-  const [moduleName, setModuleName] = useState("");
   const [gameNameDraft, setGameNameDraft] = useState(gameName);
   const isPreset = PRESET_VALUES.has(settings.currency);
   const isNone = settings.currency === "";
@@ -128,16 +116,6 @@ export function SettingsDialog({
     setLastKey(syncKey);
   }
 
-  const handleSave = () => {
-    const name = moduleName.trim();
-    if (!name) {
-      toast.error("Enter a name for this game");
-      return;
-    }
-    onSaveModule(name);
-    setModuleName("");
-    toast.success(`Saved "${name}"`);
-  };
 
   const applyLayout = () => {
     if (!activeRound) return;
@@ -571,74 +549,6 @@ export function SettingsDialog({
             </ul>
           </section>
 
-          {/* Saved modules */}
-          <section className="space-y-3 border-t-2 border-border pt-4">
-            <div>
-              <Label className="text-base font-bold">Saved Games</Label>
-              <p className="text-sm text-muted-foreground">
-                Save the current game (all rounds + settings) for future events.
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <Input
-                placeholder="e.g. Q4 Team Offsite"
-                value={moduleName}
-                onChange={(e) => setModuleName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSave()}
-              />
-              <Button onClick={handleSave} className="font-bold">
-                <Save className="w-4 h-4 mr-1" /> Save Current
-              </Button>
-            </div>
-
-            {savedModules.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic py-3">
-                No saved games yet.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {savedModules
-                  .slice()
-                  .sort((a, b) => b.savedAt - a.savedAt)
-                  .map((m) => (
-                    <li
-                      key={m.id}
-                      className="flex items-center justify-between gap-2 bg-background/50 border-2 border-border rounded-lg px-3 py-2"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold truncate">{m.name}</div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {new Date(m.savedAt).toLocaleString()} · {m.gameName} ·{" "}
-                          {m.rounds.length} round{m.rounds.length !== 1 ? "s" : ""}
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => {
-                          onLoadModule(m.id);
-                          toast.success(`Loaded "${m.name}"`);
-                        }}
-                      >
-                        <FolderOpen className="w-4 h-4 mr-1" /> Load
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          onDeleteModule(m.id);
-                          toast.success(`Deleted "${m.name}"`);
-                        }}
-                        aria-label="Delete saved game"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </li>
-                  ))}
-              </ul>
-            )}
-          </section>
         </div>
       </DialogContent>
     </Dialog>
