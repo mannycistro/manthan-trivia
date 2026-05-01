@@ -142,7 +142,34 @@ const HomePage = () => {
     } catch {}
   };
 
+  const archiveCurrentBoard = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      const rounds = migrateRounds(parsed);
+      if (!rounds || rounds.length === 0) return;
+
+      const modulesRaw = localStorage.getItem(MODULES_KEY);
+      const modules = modulesRaw ? JSON.parse(modulesRaw) : [];
+
+      const archived = {
+        id: `m-${Date.now()}`,
+        name: parsed.gameName ?? "Jeopardy!",
+        gameName: parsed.gameName ?? "Jeopardy!",
+        savedAt: Date.now(),
+        rounds,
+        settings: parsed.settings ?? {},
+      };
+      modules.push(archived);
+      localStorage.setItem(MODULES_KEY, JSON.stringify(modules));
+    } catch {}
+  };
+
   const handleCreateNew = () => {
+    // Archive the existing current board before overwriting
+    archiveCurrentBoard();
+
     const newState = {
       gameName: "Jeopardy!",
       rounds: defaultRounds(),
@@ -155,6 +182,7 @@ const HomePage = () => {
       settings: { ...DEFAULT_SETTINGS },
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+    setBoards(loadBoards());
     navigate("/edit");
   };
 
