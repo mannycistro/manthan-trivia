@@ -5,7 +5,6 @@ import {
   GameState,
   Question,
   Round,
-  SavedGameModule,
 } from "@/types/jeopardy";
 import {
   defaultRounds,
@@ -14,6 +13,15 @@ import {
   resizeRound,
   rescaleRoundValues,
 } from "@/lib/defaultGame";
+import {
+  getActiveBoardId,
+  getBoard,
+  saveBoard,
+  createNewBoard,
+  setActiveBoardId,
+  StoredBoard,
+  DEFAULT_SETTINGS,
+} from "@/lib/boardStorage";
 import { GameBoard } from "@/components/jeopardy/GameBoard";
 import { QuestionView } from "@/components/jeopardy/QuestionView";
 import { ScoreboardBar } from "@/components/jeopardy/ScoreboardBar";
@@ -26,98 +34,30 @@ import { Pencil, Settings as SettingsIcon, Volume2, VolumeX, Check, Home, Play }
 import { sounds, setMasterVolume, setCustomSounds, playBackground, stopBackground } from "@/lib/sounds";
 import { toast } from "sonner";
 
-const STORAGE_KEY = "jeopardy-game-v1";
-const MODULES_KEY = "jeopardy-modules-v1";
-
 const DEFAULT_KEYBINDINGS = { correct: "y", wrong: "n", reveal: "Space" } as const;
 
-const DEFAULT_SETTINGS: GameSettings = {
-  currency: "$",
-  timerSeconds: 30,
-  categoryFontFamily: "Montserrat",
-  categoryFontSize: 32,
-  volume: 0.8,
-  keyBindings: { ...DEFAULT_KEYBINDINGS },
-};
-
-function migrateRounds(parsed: any): Round[] | null {
-  if (Array.isArray(parsed?.rounds) && parsed.rounds.length > 0) {
-    return parsed.rounds.map((r: any, i: number) => ({
-      id: r.id ?? `r-mig-${i}`,
-      name: r.name ?? `Round ${i + 1}`,
-      rows: r.rows ?? r.categories?.[0]?.questions?.length ?? 5,
-      cols: r.cols ?? r.categories?.length ?? 5,
-      baseValue: r.baseValue ?? 100,
-      valueStep: r.valueStep ?? 100,
-      categories: r.categories ?? [],
-      usedTileIds: r.usedTileIds ?? [],
-    }));
+function loadBoardState(): { board: StoredBoard; boardId: string } {
+  const id = getActiveBoardId();
+  if (id) {
+    const board = getBoard(id);
+    if (board) return { board, boardId: id };
   }
-  // legacy: top-level categories
-  if (Array.isArray(parsed?.categories) && parsed.categories.length > 0) {
-    return [
-      {
-        id: `r-legacy-${Date.now()}`,
-        name: "Round 1",
-        rows: parsed.categories[0]?.questions?.length ?? 5,
-        cols: parsed.categories.length,
-        baseValue: 100,
-        valueStep: 100,
-        categories: parsed.categories,
-        usedTileIds: parsed.usedTileIds ?? [],
-      },
-    ];
-  }
-  return null;
+  // Fallback: create a new board
+  const newBoard = createNewBoard();
+  saveBoard(newBoard);
+  setActiveBoardId(newBoard.id);
+  return { board: newBoard, boardId: newBoard.id };
 }
 
-function loadState(): GameState {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const rounds = migrateRounds(parsed);
-      if (rounds) {
-        return {
-          gameName: parsed.gameName ?? "Jeopardy!",
-          rounds,
-          activeRoundIndex: Math.min(parsed.activeRoundIndex ?? 0, rounds.length - 1),
-          teams: parsed.teams ?? defaultTeams(),
-          soundEnabled: parsed.soundEnabled ?? true,
-          settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
-        };
-      }
-    }
-  } catch {}
+function boardToState(board: StoredBoard): GameState {
   return {
-    gameName: "Jeopardy!",
-    rounds: defaultRounds(),
-    activeRoundIndex: 0,
-    teams: defaultTeams(),
-    soundEnabled: true,
-    settings: { ...DEFAULT_SETTINGS },
+    gameName: board.gameName,
+    rounds: board.rounds,
+    activeRoundIndex: Math.min(board.activeRoundIndex, board.rounds.length - 1),
+    teams: board.teams,
+    soundEnabled: board.soundEnabled,
+    settings: { ...DEFAULT_SETTINGS, ...board.settings },
   };
-}
-
-function loadModules(): SavedGameModule[] {
-  try {
-    const raw = localStorage.getItem(MODULES_KEY);
-    if (raw) {
-      const arr = JSON.parse(raw) as any[];
-      return arr.map((m) => {
-        const rounds = migrateRounds(m) ?? [];
-        return {
-          id: m.id,
-          name: m.name,
-          savedAt: m.savedAt,
-          gameName: m.gameName ?? m.name ?? "Jeopardy!",
-          rounds,
-          settings: { ...DEFAULT_SETTINGS, ...(m.settings ?? {}) },
-        };
-      });
-    }
-  } catch {}
-  return [];
 }
 
 interface IndexProps {
@@ -126,8 +66,9 @@ interface IndexProps {
 
 const Index = ({ mode }: IndexProps) => {
   const navigate = useNavigate();
-  const [state, setState] = useState<GameState>(loadState);
-  const [modules, setModules] = useState<SavedGameModule[]>(loadModules);
+  const { board: initialBoard, boardId } = loadBoardState();
+  const [state, setState] = useState<GameState>(() => boardToState(initialBoard));
+  const boardIdRef = useRef(boardId);
   const [activeTile, setActiveTile] = useState<{ catId: string; qId: string } | null>(null);
   const [editOpen, setEditOpen] = useState(mode === "edit");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -157,13 +98,21 @@ const Index = ({ mode }: IndexProps) => {
     };
   }, [playMode]);
 
+  // Auto-save to board storage on every state change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const id = boardIdRef.current;
+    const existing = getBoard(id);
+    if (!existing) return;
+    saveBoard({
+      ...existing,
+      gameName: state.gameName,
+      rounds: state.rounds,
+      activeRoundIndex: state.activeRoundIndex,
+      teams: state.teams,
+      soundEnabled: state.soundEnabled,
+      settings: state.settings,
+    });
   }, [state]);
-
-  useEffect(() => {
-    localStorage.setItem(MODULES_KEY, JSON.stringify(modules));
-  }, [modules]);
 
   // Apply master volume / mute to sound engine
   useEffect(() => {
@@ -176,7 +125,6 @@ const Index = ({ mode }: IndexProps) => {
     setCustomSounds(state.settings.customSounds ?? {});
   }, [state.settings.customSounds]);
 
-
   const activeRound = state.rounds[state.activeRoundIndex] ?? state.rounds[0];
 
   const activeCategory = activeTile
@@ -187,7 +135,7 @@ const Index = ({ mode }: IndexProps) => {
       ? activeCategory.questions.find((q) => q.id === activeTile.qId) ?? null
       : null;
 
-  // Background music coordination — single track at a time, requires user gesture
+  // Background music coordination
   useEffect(() => {
     if (!state.soundEnabled) {
       stopBackground();
@@ -349,7 +297,6 @@ const Index = ({ mode }: IndexProps) => {
       copy.id = `r-${Date.now()}`;
       copy.name = `${src.name} (copy)`;
       copy.usedTileIds = [];
-      // re-id categories and questions to keep ids unique
       copy.categories = copy.categories.map((c, ci) => ({
         ...c,
         id: `cat-${Date.now()}-${ci}`,
@@ -388,7 +335,6 @@ const Index = ({ mode }: IndexProps) => {
     setState((s) => ({ ...s, activeRoundIndex: idx }));
   };
 
-  // ---- Layout changes for active round
   const setRoundLayout = (rows: number, cols: number, baseValue: number, valueStep: number) => {
     updateActiveRound((r) => resizeRound(r, rows, cols, baseValue, valueStep));
   };
@@ -396,36 +342,6 @@ const Index = ({ mode }: IndexProps) => {
   const rescaleActiveRound = (baseValue: number, valueStep: number) => {
     updateActiveRound((r) => rescaleRoundValues(r, baseValue, valueStep));
   };
-
-  // ---- Modules
-  const saveModule = (name: string) => {
-    const mod: SavedGameModule = {
-      id: `m-${Date.now()}`,
-      name,
-      savedAt: Date.now(),
-      gameName: state.gameName,
-      rounds: state.rounds,
-      settings: state.settings,
-    };
-    setModules((m) => [...m, mod]);
-  };
-
-  const loadModule = (id: string) => {
-    const mod = modules.find((m) => m.id === id);
-    if (!mod) return;
-    setState((s) => ({
-      ...s,
-      gameName: mod.gameName,
-      rounds: mod.rounds.map((r) => ({ ...r, usedTileIds: [] })),
-      activeRoundIndex: 0,
-      settings: { ...DEFAULT_SETTINGS, ...mod.settings },
-      teams: s.teams.map((t) => ({ ...t, score: 0 })),
-    }));
-    setNameDraft(mod.gameName);
-    setActiveTile(null);
-  };
-
-  const deleteModule = (id: string) => setModules((m) => m.filter((x) => x.id !== id));
 
   // ---- Import / Export
   const exportJson = () => {
@@ -450,7 +366,7 @@ const Index = ({ mode }: IndexProps) => {
 
   const importJson = (json: string) => {
     const parsed = JSON.parse(json);
-    const rounds = migrateRounds(parsed);
+    const rounds = migrateRoundsLocal(parsed);
     if (!rounds || rounds.length === 0) throw new Error("Invalid");
     setState((s) => ({
       ...s,
@@ -647,14 +563,39 @@ const Index = ({ mode }: IndexProps) => {
           onMoveRound={moveRound}
           onSetRoundLayout={setRoundLayout}
           onRescaleRound={rescaleActiveRound}
-          savedModules={modules}
-          onSaveModule={saveModule}
-          onLoadModule={loadModule}
-          onDeleteModule={deleteModule}
         />
       )}
     </div>
   );
 };
+
+// Local migration helper for import
+function migrateRoundsLocal(parsed: any): Round[] | null {
+  if (Array.isArray(parsed?.rounds) && parsed.rounds.length > 0) {
+    return parsed.rounds.map((r: any, i: number) => ({
+      id: r.id ?? `r-mig-${i}`,
+      name: r.name ?? `Round ${i + 1}`,
+      rows: r.rows ?? r.categories?.[0]?.questions?.length ?? 5,
+      cols: r.cols ?? r.categories?.length ?? 5,
+      baseValue: r.baseValue ?? 100,
+      valueStep: r.valueStep ?? 100,
+      categories: r.categories ?? [],
+      usedTileIds: r.usedTileIds ?? [],
+    }));
+  }
+  if (Array.isArray(parsed?.categories) && parsed.categories.length > 0) {
+    return [{
+      id: `r-legacy-${Date.now()}`,
+      name: "Round 1",
+      rows: parsed.categories[0]?.questions?.length ?? 5,
+      cols: parsed.categories.length,
+      baseValue: 100,
+      valueStep: 100,
+      categories: parsed.categories,
+      usedTileIds: parsed.usedTileIds ?? [],
+    }];
+  }
+  return null;
+}
 
 export default Index;
