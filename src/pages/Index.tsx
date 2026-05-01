@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   GameSettings,
   GameState,
@@ -119,15 +120,20 @@ function loadModules(): SavedGameModule[] {
   return [];
 }
 
-const Index = () => {
+interface IndexProps {
+  mode: "play" | "edit";
+}
+
+const Index = ({ mode }: IndexProps) => {
+  const navigate = useNavigate();
   const [state, setState] = useState<GameState>(loadState);
   const [modules, setModules] = useState<SavedGameModule[]>(loadModules);
   const [activeTile, setActiveTile] = useState<{ catId: string; qId: string } | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(mode === "edit");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(state.gameName);
-  const [playMode, setPlayMode] = useState(false);
+  const playMode = mode === "play";
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Auto-hide cursor in play mode after 2.5s of inactivity
@@ -468,7 +474,7 @@ const Index = () => {
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={() => { setPlayMode(false); setActiveTile(null); }}
+                onClick={() => { setActiveTile(null); navigate("/"); }}
                 aria-label="Back to Home"
               >
                 <Home className="w-5 h-5" />
@@ -551,8 +557,13 @@ const Index = () => {
             </>
           )}
           {!playMode && (
-            <Button onClick={() => setPlayMode(true)} variant="default" className="font-bold">
+            <Button onClick={() => navigate("/play")} variant="default" className="font-bold">
               <Play className="w-4 h-4 mr-2" /> Play
+            </Button>
+          )}
+          {!playMode && (
+            <Button onClick={() => navigate("/")} variant="ghost" className="font-bold">
+              <Home className="w-4 h-4 mr-2" /> Home
             </Button>
           )}
         </div>
