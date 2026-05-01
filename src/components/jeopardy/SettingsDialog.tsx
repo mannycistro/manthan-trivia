@@ -16,12 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { GameSettings, Round, SavedGameModule } from "@/types/jeopardy";
+import { GameSettings, Round } from "@/types/jeopardy";
 import { useState } from "react";
 import {
-  Save,
   Trash2,
-  FolderOpen,
   Copy,
   ArrowUp,
   ArrowDown,
