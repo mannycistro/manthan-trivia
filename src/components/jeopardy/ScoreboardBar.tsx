@@ -37,7 +37,7 @@ export function ScoreboardBar({
           <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
             Points
           </span>
-          <div className="flex items-center gap-1 flex-wrap max-w-[260px]">
+          <div className="flex items-center gap-1 flex-wrap max-w-[320px]">
             {QUICK.map((v) => (
               <Button
                 key={v}
@@ -53,7 +53,7 @@ export function ScoreboardBar({
               type="number"
               value={delta}
               onChange={(e) => setDelta(Number(e.target.value) || 0)}
-              className="w-16 h-7 text-xs"
+              className="w-24 h-7 text-xs tabular-nums"
             />
           </div>
         </div>
