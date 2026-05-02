@@ -125,6 +125,12 @@ export function QuestionView({
           return;
         }
       }
+      // ESC / Backspace → Back to Board
+      if (e.key === "Escape" || e.key === "Backspace") {
+        e.preventDefault();
+        back();
+        return;
+      }
       const k = normalizeKey(e);
       if (keysMatch(k, keyBindings.correct)) {
         e.preventDefault();
