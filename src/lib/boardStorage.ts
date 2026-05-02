@@ -108,11 +108,15 @@ function migrateLegacyData(): StoredBoard[] {
   } catch {}
 
   if (boards.length > 0) {
-    localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
-    localStorage.setItem(ACTIVE_BOARD_KEY, boards[0].id);
-    // Clean up legacy keys
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
-    localStorage.removeItem(LEGACY_MODULES_KEY);
+    try {
+      localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
+      localStorage.setItem(ACTIVE_BOARD_KEY, boards[0].id);
+    } catch (e) {
+      console.warn("Migration write failed (quota). Skipping persistent migration.", e);
+    }
+    // Clean up legacy keys regardless to free space and avoid re-triggering
+    try { localStorage.removeItem(LEGACY_STORAGE_KEY); } catch {}
+    try { localStorage.removeItem(LEGACY_MODULES_KEY); } catch {}
   }
 
   return boards;
@@ -130,8 +134,16 @@ export function loadAllBoards(): StoredBoard[] {
   return migrateLegacyData();
 }
 
+function safeWriteBoards(boards: StoredBoard[]) {
+  try {
+    localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
+  } catch (e) {
+    console.error("Failed to save boards (storage quota exceeded).", e);
+  }
+}
+
 export function saveAllBoards(boards: StoredBoard[]) {
-  localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
+  safeWriteBoards(boards);
 }
 
 export function getBoard(id: string): StoredBoard | null {
@@ -147,12 +159,12 @@ export function saveBoard(board: StoredBoard) {
   } else {
     boards.push({ ...board, updatedAt: Date.now() });
   }
-  localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
+  safeWriteBoards(boards);
 }
 
 export function deleteBoard(id: string) {
   const boards = loadAllBoards().filter((b) => b.id !== id);
-  localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
+  safeWriteBoards(boards);
 }
 
 export function createNewBoard(): StoredBoard {
