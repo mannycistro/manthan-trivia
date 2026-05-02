@@ -8,12 +8,15 @@ interface Props {
   /** Optional dependency that should trigger a refit (e.g. grid size). */
   refitKey?: string | number;
   fontFamily?: string;
+  /** When true, allow text to wrap across multiple lines before shrinking. */
+  multiline?: boolean;
 }
 
 /**
- * Renders text on a single line, starting at maxFontSize (the user-defined
- * base) and only shrinking down toward minFontSize when it would overflow.
- * Never scales above maxFontSize.
+ * Renders text starting at maxFontSize and shrinks toward minFontSize only
+ * when it overflows the container. When `multiline` is true, the text is
+ * allowed to wrap across multiple lines (whole words) before shrinking; a
+ * single long word will shrink instead of being broken.
  */
 export function AutoFitText({
   text,
@@ -22,6 +25,7 @@ export function AutoFitText({
   maxFontSize = 64,
   refitKey,
   fontFamily,
+  multiline = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
@@ -38,9 +42,12 @@ export function AutoFitText({
       const ch = container.clientHeight;
       if (cw === 0 || ch === 0) return;
 
-      // Try the base size first; only shrink if needed.
-      span.style.fontSize = `${maxFontSize}px`;
-      if (span.scrollWidth <= cw && span.scrollHeight <= ch) {
+      const fits = (size: number) => {
+        span.style.fontSize = `${size}px`;
+        return span.scrollWidth <= cw && span.scrollHeight <= ch;
+      };
+
+      if (fits(maxFontSize)) {
         setFontSize(maxFontSize);
         return;
       }
@@ -50,9 +57,7 @@ export function AutoFitText({
       let best = minFontSize;
       while (lo <= hi) {
         const mid = Math.floor((lo + hi) / 2);
-        span.style.fontSize = `${mid}px`;
-        const fits = span.scrollWidth <= cw && span.scrollHeight <= ch;
-        if (fits) {
+        if (fits(mid)) {
           best = mid;
           lo = mid + 1;
         } else {
@@ -74,7 +79,7 @@ export function AutoFitText({
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [text, minFontSize, maxFontSize, refitKey, fontFamily]);
+  }, [text, minFontSize, maxFontSize, refitKey, fontFamily, multiline]);
 
   return (
     <div
@@ -87,12 +92,13 @@ export function AutoFitText({
         style={{
           fontSize,
           fontFamily,
-          whiteSpace: "nowrap",
+          whiteSpace: multiline ? "normal" : "nowrap",
+          wordBreak: "normal",
+          overflowWrap: multiline ? "break-word" : "normal",
           display: "inline-block",
           lineHeight: 1.1,
           maxWidth: "100%",
-          textOverflow: "ellipsis",
-          overflow: "hidden",
+          textAlign: "center",
         }}
       >
         {text}

@@ -37,7 +37,7 @@ export function ScoreboardBar({
           <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
             Points
           </span>
-          <div className="flex items-center gap-1 flex-wrap max-w-[260px]">
+          <div className="flex items-center gap-1 flex-wrap max-w-[320px]">
             {QUICK.map((v) => (
               <Button
                 key={v}
@@ -53,7 +53,7 @@ export function ScoreboardBar({
               type="number"
               value={delta}
               onChange={(e) => setDelta(Number(e.target.value) || 0)}
-              className="w-16 h-7 text-xs"
+              className="w-24 h-7 text-xs tabular-nums"
             />
           </div>
         </div>
@@ -63,7 +63,7 @@ export function ScoreboardBar({
           {teams.map((team) => (
             <div
               key={team.id}
-              className="shrink-0 w-[200px] bg-secondary/80 border-2 border-border rounded-lg px-2 py-1.5 flex items-center gap-2"
+              className="shrink-0 w-[300px] bg-secondary/80 border-2 border-border rounded-lg px-3 py-1.5 flex items-center gap-2"
             >
               {/* Name + score column */}
               <div className="flex-1 min-w-0">
@@ -71,7 +71,9 @@ export function ScoreboardBar({
                   <Input
                     value={team.name}
                     onChange={(e) => onUpdateName(team.id, e.target.value)}
-                    className="font-bold text-sm h-6 px-1 bg-background/40 border-0 focus-visible:ring-1"
+                    maxLength={40}
+                    className="font-bold text-sm h-6 px-1 bg-background/40 border-0 focus-visible:ring-1 truncate"
+                    title={team.name}
                   />
                   {teams.length > 2 && (
                     <Button

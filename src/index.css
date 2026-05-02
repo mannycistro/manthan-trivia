@@ -119,4 +119,8 @@
     background-clip: text;
     color: transparent;
   }
+  body.play-mode-no-cursor,
+  body.play-mode-no-cursor * {
+    cursor: none !important;
+  }
 }
