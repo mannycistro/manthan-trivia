@@ -58,6 +58,7 @@ export function GameBoard({
                 maxFontSize={size}
                 refitKey={`${rows}x${cols}-${family}-${size}`}
                 fontFamily={categoryFontStack(family)}
+                multiline
               />
             )}
           </div>
