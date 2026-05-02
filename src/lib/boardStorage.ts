@@ -134,8 +134,16 @@ export function loadAllBoards(): StoredBoard[] {
   return migrateLegacyData();
 }
 
+function safeWriteBoards(boards: StoredBoard[]) {
+  try {
+    localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
+  } catch (e) {
+    console.error("Failed to save boards (storage quota exceeded).", e);
+  }
+}
+
 export function saveAllBoards(boards: StoredBoard[]) {
-  localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
+  safeWriteBoards(boards);
 }
 
 export function getBoard(id: string): StoredBoard | null {
@@ -151,12 +159,12 @@ export function saveBoard(board: StoredBoard) {
   } else {
     boards.push({ ...board, updatedAt: Date.now() });
   }
-  localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
+  safeWriteBoards(boards);
 }
 
 export function deleteBoard(id: string) {
   const boards = loadAllBoards().filter((b) => b.id !== id);
-  localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
+  safeWriteBoards(boards);
 }
 
 export function createNewBoard(): StoredBoard {
