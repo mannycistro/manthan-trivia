@@ -188,7 +188,11 @@ export function QuestionView({
   };
 
   return (
-    <div className="animate-fade-in h-full flex flex-col relative">
+    <div
+      className="animate-fade-in h-full flex flex-col relative select-none outline-none"
+      style={{ WebkitUserSelect: "none", userSelect: "none", caretColor: "transparent" }}
+      tabIndex={-1}
+    >
       {/* Header bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3 shrink-0">
         <Button variant="secondary" size="lg" onClick={back} className="font-bold">
