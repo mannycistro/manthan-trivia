@@ -59,11 +59,11 @@ export function ScoreboardBar({
         </div>
 
         {/* Teams strip */}
-        <div className="flex-1 flex gap-2 md:gap-3 overflow-x-auto">
+        <div className="flex-1 flex justify-center gap-2 md:gap-3 overflow-x-auto">
           {teams.map((team) => (
             <div
               key={team.id}
-              className="flex-1 min-w-[160px] bg-secondary/80 border-2 border-border rounded-lg px-2 py-1.5 flex items-center gap-2"
+              className="shrink-0 w-[200px] bg-secondary/80 border-2 border-border rounded-lg px-2 py-1.5 flex items-center gap-2"
             >
               {/* Name + score column */}
               <div className="flex-1 min-w-0">
