@@ -214,7 +214,7 @@ export function QuestionView({
 
       {/* Main panel — dominant immersive container */}
       <div className="flex-1 min-h-0 flex items-center justify-center px-4 md:px-16 lg:px-24">
-        <div className="w-full h-full bg-accent/90 border-4 border-primary/40 rounded-3xl p-6 md:p-12 shadow-glow text-center flex flex-col items-center justify-center overflow-y-auto">
+        <div className="w-full max-w-6xl h-full bg-accent/90 border-4 border-primary/40 rounded-3xl p-6 md:p-12 shadow-glow text-center flex flex-col items-center justify-center overflow-y-auto">
           {renderMedia() && <div className="mb-6 w-full">{renderMedia()}</div>}
 
           <p className="font-display auto-shrink text-white text-shadow-jeopardy uppercase break-words">
