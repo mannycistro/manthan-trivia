@@ -24,7 +24,7 @@ export function GameBoard({
   const { categories, rows, cols, usedTileIds } = round;
   const usedSet = new Set(usedTileIds);
 
-  const gridTemplateRows = `minmax(0, 0.6fr) repeat(${rows}, minmax(0, 1fr))`;
+  const gridTemplateRows = `minmax(0, 1.6fr) repeat(${rows}, minmax(0, 1fr))`;
   const gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
 
   const categoryFontStack = (family: string) =>

@@ -487,7 +487,7 @@ const Index = ({ mode }: IndexProps) => {
 
       <main className="flex-1 min-h-0 flex flex-col pb-1">
         {activeQuestion && activeCategory ? (
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="flex-1 min-h-0">
             <QuestionView
               category={activeCategory}
               question={activeQuestion}
