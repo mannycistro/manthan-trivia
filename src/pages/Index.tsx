@@ -77,24 +77,15 @@ const Index = ({ mode }: IndexProps) => {
   const playMode = mode === "play";
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-hide cursor in play mode after 2.5s of inactivity
+  // Hide cursor entirely in play mode
   useEffect(() => {
     if (!playMode) return;
-    let timer: number;
-    const hide = () => {
-      if (containerRef.current) containerRef.current.style.cursor = "none";
-    };
-    const show = () => {
-      if (containerRef.current) containerRef.current.style.cursor = "";
-      clearTimeout(timer);
-      timer = window.setTimeout(hide, 2500);
-    };
-    show();
-    window.addEventListener("mousemove", show);
+    const el = containerRef.current;
+    if (el) el.classList.add("cursor-none");
+    document.body.classList.add("play-mode-no-cursor");
     return () => {
-      clearTimeout(timer);
-      window.removeEventListener("mousemove", show);
-      if (containerRef.current) containerRef.current.style.cursor = "";
+      if (el) el.classList.remove("cursor-none");
+      document.body.classList.remove("play-mode-no-cursor");
     };
   }, [playMode]);
 
