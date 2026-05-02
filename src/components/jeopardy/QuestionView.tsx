@@ -188,9 +188,9 @@ export function QuestionView({
   };
 
   return (
-    <div className="animate-fade-in min-h-[80vh] flex flex-col relative">
+    <div className="animate-fade-in h-full flex flex-col relative">
       {/* Header bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3 shrink-0">
         <Button variant="secondary" size="lg" onClick={back} className="font-bold">
           <ArrowLeft className="w-5 h-5 mr-2" /> Back to Board
         </Button>
@@ -212,17 +212,17 @@ export function QuestionView({
         />
       </div>
 
-      {/* Main panel — player-facing only (no host buttons or shortcut hints) */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-5xl bg-accent/90 border-4 border-primary/40 rounded-3xl p-6 md:p-12 shadow-glow text-center max-h-[75vh] overflow-y-auto">
-          {renderMedia() && <div className="mb-6">{renderMedia()}</div>}
+      {/* Main panel — dominant immersive container */}
+      <div className="flex-1 min-h-0 flex items-center justify-center">
+        <div className="w-full h-full bg-accent/90 border-4 border-primary/40 rounded-3xl p-6 md:p-12 shadow-glow text-center flex flex-col items-center justify-center overflow-y-auto">
+          {renderMedia() && <div className="mb-6 w-full">{renderMedia()}</div>}
 
           <p className="font-display auto-shrink text-white text-shadow-jeopardy uppercase break-words">
             {question.question}
           </p>
 
           {revealed && (
-            <div className="mt-8 pt-8 border-t-2 border-primary/40 animate-reveal">
+            <div className="mt-8 pt-8 border-t-2 border-primary/40 animate-reveal w-full">
               <p className="text-sm uppercase tracking-widest text-primary mb-2">Answer</p>
               <p className="font-display auto-shrink gold-gradient break-words">
                 {question.answer}
