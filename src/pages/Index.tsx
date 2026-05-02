@@ -386,6 +386,14 @@ const Index = ({ mode }: IndexProps) => {
               >
                 <Home className="w-5 h-5" />
               </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setState((s) => ({ ...s, soundEnabled: !s.soundEnabled }))}
+                aria-label="Toggle sound"
+              >
+                {state.soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </Button>
               <h1 className="font-display text-2xl md:text-3xl gold-gradient text-shadow-jeopardy break-words leading-none">
                 {state.gameName}
               </h1>
