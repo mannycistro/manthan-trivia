@@ -101,8 +101,8 @@
     line-height: 1;
   }
   .auto-shrink {
-    font-size: clamp(1.25rem, 3.2vw, 3rem);
-    line-height: 1.15;
+    font-size: clamp(0.95rem, 2.6vw, 3rem);
+    line-height: 1.2;
   }
 }
 
