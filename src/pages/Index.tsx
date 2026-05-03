@@ -77,17 +77,7 @@ const Index = ({ mode }: IndexProps) => {
   const playMode = mode === "play";
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Hide cursor entirely in play mode
-  useEffect(() => {
-    if (!playMode) return;
-    const el = containerRef.current;
-    if (el) el.classList.add("cursor-none");
-    document.body.classList.add("play-mode-no-cursor");
-    return () => {
-      if (el) el.classList.remove("cursor-none");
-      document.body.classList.remove("play-mode-no-cursor");
-    };
-  }, [playMode]);
+  // Cursor remains visible in both modes; caret/selection restrictions are scoped per-component.
 
   // Auto-save to board storage on every state change
   useEffect(() => {
