@@ -58,14 +58,23 @@ export function setCustomSounds(map: Partial<Record<SoundKey, string>>) {
   }
 }
 
+const sfxInstances: Partial<Record<SoundKey, HTMLAudioElement>> = {};
 function playCustom(key: SoundKey, loop = false, volumeScale = 1): HTMLAudioElement | null {
   const src = customSounds[key];
   if (!src) return null;
   try {
+    // Stop any existing instance for this key (no overlap; restart cleanly)
+    const prev = sfxInstances[key];
+    if (prev) {
+      try { prev.pause(); prev.currentTime = 0; } catch {}
+      sfxInstances[key] = undefined;
+    }
     const a = new Audio(src);
     a.loop = loop;
     a.volume = Math.max(0, Math.min(1, masterVolume * volumeScale));
+    a.onended = () => { if (sfxInstances[key] === a) sfxInstances[key] = undefined; };
     void a.play().catch(() => {});
+    sfxInstances[key] = a;
     return a;
   } catch {
     return null;
@@ -172,13 +181,17 @@ export const sounds = {
       tone(660, 0.2, "triangle", 0.18, 0.08);
     } catch {}
   },
-  startTicking() {
+  startTicking(onEnded?: () => void) {
     if (tickingTimer != null || customTickAudio) return;
     if (customSounds.ticking) {
       try {
         const a = new Audio(customSounds.ticking);
-        a.loop = true;
+        a.loop = false;
         a.volume = masterVolume;
+        a.onended = () => {
+          customTickAudio = null;
+          onEnded?.();
+        };
         void a.play().catch(() => {});
         customTickAudio = a;
         return;
