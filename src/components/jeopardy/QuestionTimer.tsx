@@ -104,7 +104,6 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
   const handlePause = () => {
     manualRef.current = true;
     setRunning(false);
-    sounds.stopTicking();
   };
   const handleResume = () => {
     manualRef.current = true;
@@ -113,6 +112,7 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
   const handleRestart = () => {
     manualRef.current = true;
     firedTimeout.current = false;
+    sounds.stopTicking();
     setSeconds(initialSeconds);
     setRunning(initialSeconds > 0);
   };
