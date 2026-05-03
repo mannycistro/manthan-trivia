@@ -36,16 +36,17 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
     firedTimeout.current = false;
   }, [initialSeconds, autoStart]);
 
-  // Audio follows timer state. Pause/resume preserves position; stop only on unmount or restart.
+  // Audio follows timer state. Pause/resume preserves position.
+  // When timer ends naturally (seconds === 0), DO NOT pause audio — let it play out.
   useEffect(() => {
     if (running) {
-      sounds.resumeTicking(() => {
-        // audio fully ended (only meaningful for custom track)
-      });
-    } else {
+      sounds.resumeTicking();
+    } else if (seconds > 0) {
+      // Manual pause / stop while time remains
       sounds.pauseTicking();
     }
-  }, [running]);
+    // seconds === 0 && !running => natural end: leave audio alone
+  }, [running, seconds]);
 
   // Mute toggling without affecting playback position
   useEffect(() => {

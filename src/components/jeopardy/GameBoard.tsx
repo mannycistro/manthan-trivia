@@ -41,7 +41,9 @@ export function GameBoard({
         return (
           <div
             key={`h-${cat.id}`}
-            className="bg-accent text-accent-foreground rounded-lg p-1.5 md:p-2 flex items-center justify-center text-center shadow-tile overflow-hidden min-w-0 min-h-0 [container-type:size]"
+            className={`bg-accent text-accent-foreground rounded-lg p-1.5 md:p-2 flex items-center justify-center text-center shadow-tile overflow-hidden min-w-0 min-h-0 [container-type:size] ${editMode ? "" : "select-none"}`}
+            style={editMode ? undefined : { caretColor: "transparent", WebkitUserSelect: "none", userSelect: "none" }}
+            onMouseDown={editMode ? undefined : (e) => { if ((e.target as HTMLElement).tagName !== "TEXTAREA") e.preventDefault(); }}
           >
             {editMode ? (
               <Textarea
@@ -76,13 +78,15 @@ export function GameBoard({
               onClick={() => !used && onTileClick(cat.id, q.id)}
               disabled={used}
               className={[
-                "rounded-lg p-1 md:p-2 min-w-0 min-h-0 w-full h-full",
+                "rounded-lg p-1 md:p-2 min-w-0 min-h-0 w-full h-full select-none outline-none",
                 "flex items-center justify-center transition-all duration-200",
                 "shadow-tile font-display [container-type:size]",
                 used
                   ? "bg-tile-used text-tile-used-foreground cursor-not-allowed opacity-60"
                   : "tile-gradient text-tile-foreground hover:scale-[1.03] hover:shadow-glow active:translate-y-1",
               ].join(" ")}
+              style={{ caretColor: "transparent", WebkitUserSelect: "none", userSelect: "none" }}
+              onMouseDown={(e) => e.preventDefault()}
               aria-label={`${cat.title} for ${q.value}`}
             >
               <span
