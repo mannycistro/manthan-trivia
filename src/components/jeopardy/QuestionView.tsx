@@ -221,14 +221,20 @@ export function QuestionView({
         <div className="w-full max-w-6xl h-full bg-accent/90 border-4 border-primary/40 rounded-3xl p-6 md:p-12 shadow-glow text-center flex flex-col items-center justify-center overflow-y-auto">
           {renderMedia() && <div className="mb-6 w-full">{renderMedia()}</div>}
 
-          <p className="font-display auto-shrink text-white text-shadow-jeopardy uppercase break-words">
+          <p
+            className="font-display auto-shrink text-white text-shadow-jeopardy uppercase break-words"
+            style={{ whiteSpace: "pre-wrap" }}
+          >
             {question.question}
           </p>
 
           {revealed && (
             <div className="mt-8 pt-8 border-t-2 border-primary/40 animate-reveal w-full">
               <p className="text-sm uppercase tracking-widest text-primary mb-2">Answer</p>
-              <p className="font-display auto-shrink gold-gradient break-words">
+              <p
+                className="font-display auto-shrink gold-gradient break-words"
+                style={{ whiteSpace: "pre-wrap" }}
+              >
                 {question.answer}
               </p>
             </div>
