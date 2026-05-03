@@ -41,7 +41,9 @@ export function GameBoard({
         return (
           <div
             key={`h-${cat.id}`}
-            className="bg-accent text-accent-foreground rounded-lg p-1.5 md:p-2 flex items-center justify-center text-center shadow-tile overflow-hidden min-w-0 min-h-0 [container-type:size]"
+            className={`bg-accent text-accent-foreground rounded-lg p-1.5 md:p-2 flex items-center justify-center text-center shadow-tile overflow-hidden min-w-0 min-h-0 [container-type:size] ${editMode ? "" : "select-none"}`}
+            style={editMode ? undefined : { caretColor: "transparent", WebkitUserSelect: "none", userSelect: "none" }}
+            onMouseDown={editMode ? undefined : (e) => { if ((e.target as HTMLElement).tagName !== "TEXTAREA") e.preventDefault(); }}
           >
             {editMode ? (
               <Textarea
