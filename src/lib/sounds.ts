@@ -51,11 +51,6 @@ export type SoundKey =
 let customSounds: Partial<Record<SoundKey, string>> = {};
 export function setCustomSounds(map: Partial<Record<SoundKey, string>>) {
   customSounds = { ...map };
-  // If ticking is currently playing and a custom is set/cleared, restart loop
-  if (tickingTimer != null || customTickAudio) {
-    sounds.stopTicking();
-    sounds.startTicking();
-  }
 }
 
 const sfxInstances: Partial<Record<SoundKey, HTMLAudioElement>> = {};
