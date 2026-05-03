@@ -64,7 +64,7 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
     } else if (seconds === 0 && !firedTimeout.current) {
       firedTimeout.current = true;
       setRunning(false);
-      sounds.stopTicking();
+      // Do NOT stop ticking here — let custom timer audio play until it ends.
       if (soundEnabled) sounds.timeout();
       onTimeout?.();
     }
@@ -77,7 +77,7 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
     pause: () => {
       manualRef.current = true;
       setRunning(false);
-      sounds.stopTicking();
+      // pause (preserve position) handled by audio effect
     },
     resume: () => {
       manualRef.current = true;
@@ -86,6 +86,7 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
     restart: () => {
       manualRef.current = true;
       firedTimeout.current = false;
+      sounds.stopTicking();
       setSeconds(initialSeconds);
       setRunning(initialSeconds > 0);
     },
