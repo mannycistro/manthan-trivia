@@ -36,12 +36,21 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
     firedTimeout.current = false;
   }, [initialSeconds, autoStart]);
 
-  // Ticking sound
+  // Ticking sound — start once when running becomes true; stop when it becomes false.
+  // Do NOT depend on `seconds` (would restart custom audio every tick).
   useEffect(() => {
-    if (running && soundEnabled && seconds > 0) sounds.startTicking();
-    else sounds.stopTicking();
+    if (running && soundEnabled) {
+      sounds.startTicking(() => {
+        // Custom timer audio finished → stop the timer
+        setRunning(false);
+        firedTimeout.current = true;
+        onTimeout?.();
+      });
+    } else {
+      sounds.stopTicking();
+    }
     return () => sounds.stopTicking();
-  }, [running, soundEnabled, seconds]);
+  }, [running, soundEnabled, onTimeout]);
 
   // Countdown
   useEffect(() => {
