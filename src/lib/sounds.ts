@@ -125,6 +125,7 @@ function tone(freq: number, duration: number, type: OscillatorType = "sine", gai
 let tickingTimer: number | null = null;
 let tickingMaster: GainNode | null = null;
 let customTickAudio: HTMLAudioElement | null = null;
+let tickingMuted = false;
 
 function playTickOnce() {
   try {
