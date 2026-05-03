@@ -58,14 +58,23 @@ export function setCustomSounds(map: Partial<Record<SoundKey, string>>) {
   }
 }
 
+const sfxInstances: Partial<Record<SoundKey, HTMLAudioElement>> = {};
 function playCustom(key: SoundKey, loop = false, volumeScale = 1): HTMLAudioElement | null {
   const src = customSounds[key];
   if (!src) return null;
   try {
+    // Stop any existing instance for this key (no overlap; restart cleanly)
+    const prev = sfxInstances[key];
+    if (prev) {
+      try { prev.pause(); prev.currentTime = 0; } catch {}
+      sfxInstances[key] = undefined;
+    }
     const a = new Audio(src);
     a.loop = loop;
     a.volume = Math.max(0, Math.min(1, masterVolume * volumeScale));
+    a.onended = () => { if (sfxInstances[key] === a) sfxInstances[key] = undefined; };
     void a.play().catch(() => {});
+    sfxInstances[key] = a;
     return a;
   } catch {
     return null;
