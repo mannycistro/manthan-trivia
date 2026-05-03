@@ -177,14 +177,16 @@ export const sounds = {
     } catch {}
   },
   startTicking(onEnded?: () => void) {
-    if (tickingTimer != null || customTickAudio) return;
+    // If already running, do nothing (prevent multiple instances)
+    if (customTickAudio || tickingTimer != null) return;
     if (customSounds.ticking) {
       try {
         const a = new Audio(customSounds.ticking);
         a.loop = false;
         a.volume = masterVolume;
+        a.muted = tickingMuted;
         a.onended = () => {
-          customTickAudio = null;
+          if (customTickAudio === a) customTickAudio = null;
           onEnded?.();
         };
         void a.play().catch(() => {});
@@ -192,8 +194,42 @@ export const sounds = {
         return;
       } catch {}
     }
+    // Fallback: synthesized ticks every second
     playTickOnce();
     tickingTimer = window.setInterval(playTickOnce, 1000);
+  },
+  pauseTicking() {
+    if (customTickAudio) {
+      try { customTickAudio.pause(); } catch {}
+      return;
+    }
+    if (tickingTimer != null) {
+      window.clearInterval(tickingTimer);
+      tickingTimer = null;
+    }
+  },
+  resumeTicking(onEnded?: () => void) {
+    if (customTickAudio) {
+      try {
+        customTickAudio.muted = tickingMuted;
+        void customTickAudio.play().catch(() => {});
+      } catch {}
+      return;
+    }
+    // Fallback path: if no interval running, restart synthesized ticks
+    if (tickingTimer == null && !customSounds.ticking) {
+      playTickOnce();
+      tickingTimer = window.setInterval(playTickOnce, 1000);
+    } else if (customSounds.ticking) {
+      // Custom audio was lost — start fresh
+      this.startTicking(onEnded);
+    }
+  },
+  setTickingMuted(muted: boolean) {
+    tickingMuted = muted;
+    if (customTickAudio) {
+      try { customTickAudio.muted = muted; } catch {}
+    }
   },
   stopTicking() {
     if (tickingTimer != null) {
@@ -204,6 +240,7 @@ export const sounds = {
       try {
         customTickAudio.pause();
         customTickAudio.currentTime = 0;
+        customTickAudio.onended = null;
       } catch {}
       customTickAudio = null;
     }
@@ -212,7 +249,6 @@ export const sounds = {
         const c = getCtx();
         tickingMaster.gain.cancelScheduledValues(c.currentTime);
         tickingMaster.gain.setValueAtTime(0, c.currentTime);
-        // reset for next start
         window.setTimeout(() => {
           if (tickingMaster) tickingMaster.gain.setValueAtTime(masterVolume, getCtx().currentTime);
         }, 100);
