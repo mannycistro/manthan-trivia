@@ -36,21 +36,26 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
     firedTimeout.current = false;
   }, [initialSeconds, autoStart]);
 
-  // Ticking sound — start once when running becomes true; stop when it becomes false.
-  // Do NOT depend on `seconds` (would restart custom audio every tick).
+  // Audio follows timer state. Pause/resume preserves position; stop only on unmount or restart.
   useEffect(() => {
-    if (running && soundEnabled) {
-      sounds.startTicking(() => {
-        // Custom timer audio finished → stop the timer
-        setRunning(false);
-        firedTimeout.current = true;
-        onTimeout?.();
+    if (running) {
+      sounds.resumeTicking(() => {
+        // audio fully ended (only meaningful for custom track)
       });
     } else {
-      sounds.stopTicking();
+      sounds.pauseTicking();
     }
+  }, [running]);
+
+  // Mute toggling without affecting playback position
+  useEffect(() => {
+    sounds.setTickingMuted(!soundEnabled);
+  }, [soundEnabled]);
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => sounds.stopTicking();
-  }, [running, soundEnabled, onTimeout]);
+  }, []);
 
   // Countdown
   useEffect(() => {
