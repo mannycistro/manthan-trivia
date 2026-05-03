@@ -36,21 +36,26 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
     firedTimeout.current = false;
   }, [initialSeconds, autoStart]);
 
-  // Ticking sound — start once when running becomes true; stop when it becomes false.
-  // Do NOT depend on `seconds` (would restart custom audio every tick).
+  // Audio follows timer state. Pause/resume preserves position; stop only on unmount or restart.
   useEffect(() => {
-    if (running && soundEnabled) {
-      sounds.startTicking(() => {
-        // Custom timer audio finished → stop the timer
-        setRunning(false);
-        firedTimeout.current = true;
-        onTimeout?.();
+    if (running) {
+      sounds.resumeTicking(() => {
+        // audio fully ended (only meaningful for custom track)
       });
     } else {
-      sounds.stopTicking();
+      sounds.pauseTicking();
     }
+  }, [running]);
+
+  // Mute toggling without affecting playback position
+  useEffect(() => {
+    sounds.setTickingMuted(!soundEnabled);
+  }, [soundEnabled]);
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => sounds.stopTicking();
-  }, [running, soundEnabled, onTimeout]);
+  }, []);
 
   // Countdown
   useEffect(() => {
@@ -59,7 +64,7 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
     } else if (seconds === 0 && !firedTimeout.current) {
       firedTimeout.current = true;
       setRunning(false);
-      sounds.stopTicking();
+      // Do NOT stop ticking here — let custom timer audio play until it ends.
       if (soundEnabled) sounds.timeout();
       onTimeout?.();
     }
@@ -72,7 +77,7 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
     pause: () => {
       manualRef.current = true;
       setRunning(false);
-      sounds.stopTicking();
+      // pause (preserve position) handled by audio effect
     },
     resume: () => {
       manualRef.current = true;
@@ -81,6 +86,7 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
     restart: () => {
       manualRef.current = true;
       firedTimeout.current = false;
+      sounds.stopTicking();
       setSeconds(initialSeconds);
       setRunning(initialSeconds > 0);
     },
@@ -98,7 +104,6 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
   const handlePause = () => {
     manualRef.current = true;
     setRunning(false);
-    sounds.stopTicking();
   };
   const handleResume = () => {
     manualRef.current = true;
@@ -107,6 +112,7 @@ export const QuestionTimer = forwardRef<QuestionTimerHandle, Props>(function Que
   const handleRestart = () => {
     manualRef.current = true;
     firedTimeout.current = false;
+    sounds.stopTicking();
     setSeconds(initialSeconds);
     setRunning(initialSeconds > 0);
   };
