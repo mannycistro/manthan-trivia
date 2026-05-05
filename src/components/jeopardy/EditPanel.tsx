@@ -22,6 +22,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Download, Upload, X } from "lucide-react";
 import { useRef } from "react";
 import { toast } from "sonner";
+import { putMedia, newMediaId, idToRef, isMediaRef, deleteMedia, refToId } from "@/lib/mediaStorage";
 
 const CATEGORY_FONT_OPTIONS = [
   "Montserrat",
