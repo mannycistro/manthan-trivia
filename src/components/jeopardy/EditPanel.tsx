@@ -483,9 +483,12 @@ export function EditPanel({
                             <Button
                               size="icon"
                               variant="ghost"
-                              onClick={() =>
-                                onUpdateQuestion(cat.id, q.id, { mediaUrl: undefined })
-                              }
+                              onClick={() => {
+                                if (isMediaRef(q.mediaUrl)) {
+                                  deleteMedia(refToId(q.mediaUrl!)).catch(() => {});
+                                }
+                                onUpdateQuestion(cat.id, q.id, { mediaUrl: undefined });
+                              }}
                               aria-label="Clear media"
                             >
                               <X className="w-4 h-4" />
