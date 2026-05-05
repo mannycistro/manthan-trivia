@@ -451,12 +451,14 @@ export function EditPanel({
                                 : "Paste URL or use upload →"
                             }
                             value={
-                              q.mediaUrl?.startsWith("data:") ? "[uploaded file]" : q.mediaUrl || ""
+                              isMediaRef(q.mediaUrl) || q.mediaUrl?.startsWith("data:")
+                                ? "[uploaded file]"
+                                : q.mediaUrl || ""
                             }
                             onChange={(e) =>
                               onUpdateQuestion(cat.id, q.id, { mediaUrl: e.target.value })
                             }
-                            disabled={q.mediaUrl?.startsWith("data:")}
+                            disabled={isMediaRef(q.mediaUrl) || q.mediaUrl?.startsWith("data:")}
                           />
                         </div>
                         <div className="flex gap-1">
