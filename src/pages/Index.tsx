@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Pencil, Settings as SettingsIcon, Volume2, VolumeX, Check, Home, Play } from "lucide-react";
 import { sounds, setMasterVolume, setCustomSounds, playBackground, stopBackground } from "@/lib/sounds";
 import { toast } from "sonner";
+import { isMediaRef, getMedia, refToId, putMedia, idToRef, newMediaId } from "@/lib/mediaStorage";
 
 const DEFAULT_KEYBINDINGS = { correct: "y", wrong: "n", reveal: "Space" } as const;
 
@@ -327,11 +328,36 @@ const Index = ({ mode }: IndexProps) => {
   };
 
   // ---- Import / Export
-  const exportJson = () => {
+  const exportJson = async () => {
+    // Inline media data URLs from IDB so the exported JSON is self-contained.
+    const roundsForExport = await Promise.all(
+      state.rounds.map(async (r) => ({
+        ...r,
+        usedTileIds: [],
+        categories: await Promise.all(
+          r.categories.map(async (c) => ({
+            ...c,
+            questions: await Promise.all(
+              c.questions.map(async (q) => {
+                if (isMediaRef(q.mediaUrl)) {
+                  try {
+                    const url = await getMedia(refToId(q.mediaUrl!));
+                    return { ...q, mediaUrl: url ?? undefined };
+                  } catch {
+                    return q;
+                  }
+                }
+                return q;
+              })
+            ),
+          }))
+        ),
+      }))
+    );
     const data = JSON.stringify(
       {
         gameName: state.gameName,
-        rounds: state.rounds.map((r) => ({ ...r, usedTileIds: [] })),
+        rounds: roundsForExport,
         teams: state.teams.map((t) => ({ ...t, score: 0 })),
         settings: state.settings,
       },
@@ -347,10 +373,26 @@ const Index = ({ mode }: IndexProps) => {
     URL.revokeObjectURL(url);
   };
 
-  const importJson = (json: string) => {
+  const importJson = async (json: string) => {
     const parsed = JSON.parse(json);
     const rounds = migrateRoundsLocal(parsed);
     if (!rounds || rounds.length === 0) throw new Error("Invalid");
+    // Move any inline data: URLs into IDB and replace with refs.
+    for (const r of rounds) {
+      for (const c of r.categories) {
+        for (const q of c.questions) {
+          if (q.mediaUrl && q.mediaUrl.startsWith("data:")) {
+            const id = newMediaId();
+            try {
+              await putMedia(id, q.mediaUrl);
+              q.mediaUrl = idToRef(id);
+            } catch {
+              // leave as-is on failure
+            }
+          }
+        }
+      }
+    }
     setState((s) => ({
       ...s,
       gameName: parsed.gameName ?? s.gameName,

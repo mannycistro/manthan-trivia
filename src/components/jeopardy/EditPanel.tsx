@@ -22,6 +22,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Download, Upload, X } from "lucide-react";
 import { useRef } from "react";
 import { toast } from "sonner";
+import { putMedia, newMediaId, idToRef, isMediaRef, deleteMedia, refToId } from "@/lib/mediaStorage";
 
 const CATEGORY_FONT_OPTIONS = [
   "Montserrat",
@@ -83,11 +84,19 @@ export function EditPanel({
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => {
-      onUpdateQuestion(categoryId, questionId, {
-        mediaType: expectedType,
-        mediaUrl: reader.result as string,
-      });
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      const id = newMediaId();
+      try {
+        await putMedia(id, dataUrl);
+        onUpdateQuestion(categoryId, questionId, {
+          mediaType: expectedType,
+          mediaUrl: idToRef(id),
+        });
+      } catch (err) {
+        console.error("Media save failed", err);
+        toast.error("Failed to save media");
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -442,12 +451,14 @@ export function EditPanel({
                                 : "Paste URL or use upload →"
                             }
                             value={
-                              q.mediaUrl?.startsWith("data:") ? "[uploaded file]" : q.mediaUrl || ""
+                              isMediaRef(q.mediaUrl) || q.mediaUrl?.startsWith("data:")
+                                ? "[uploaded file]"
+                                : q.mediaUrl || ""
                             }
                             onChange={(e) =>
                               onUpdateQuestion(cat.id, q.id, { mediaUrl: e.target.value })
                             }
-                            disabled={q.mediaUrl?.startsWith("data:")}
+                            disabled={isMediaRef(q.mediaUrl) || q.mediaUrl?.startsWith("data:")}
                           />
                         </div>
                         <div className="flex gap-1">
@@ -472,9 +483,12 @@ export function EditPanel({
                             <Button
                               size="icon"
                               variant="ghost"
-                              onClick={() =>
-                                onUpdateQuestion(cat.id, q.id, { mediaUrl: undefined })
-                              }
+                              onClick={() => {
+                                if (isMediaRef(q.mediaUrl)) {
+                                  deleteMedia(refToId(q.mediaUrl!)).catch(() => {});
+                                }
+                                onUpdateQuestion(cat.id, q.id, { mediaUrl: undefined });
+                              }}
                               aria-label="Clear media"
                             >
                               <X className="w-4 h-4" />
