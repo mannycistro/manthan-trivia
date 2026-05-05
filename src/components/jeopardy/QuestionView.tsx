@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { QuestionTimer, QuestionTimerHandle } from "./QuestionTimer";
 import { sounds } from "@/lib/sounds";
 import { playBackground } from "@/lib/sounds";
+import { getMedia, isMediaRef, refToId } from "@/lib/mediaStorage";
 
 interface Props {
   category: Category;
