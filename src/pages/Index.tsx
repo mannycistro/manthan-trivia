@@ -209,14 +209,16 @@ const Index = ({ mode }: IndexProps) => {
   const removeTeam = (id: string) =>
     setState((s) => (s.teams.length <= 2 ? s : { ...s, teams: s.teams.filter((t) => t.id !== id) }));
 
-  // ---- Reset
+  // ---- Reset (gameplay only — never deletes questions, answers, media, or settings)
   const resetActiveRoundUsedTiles = () => {
+    setActiveTile(null); // close any open question / reset timer
     updateActiveRound((r) => ({ ...r, usedTileIds: [] }));
     setState((s) => ({ ...s, teams: s.teams.map((t) => ({ ...t, score: 0 })) }));
     toast.success("Round tiles and scores reset");
   };
 
   const resetAllRounds = () => {
+    setActiveTile(null); // close any open question / reset timer
     setState((s) => ({
       ...s,
       rounds: s.rounds.map((r) => ({ ...r, usedTileIds: [] })),
