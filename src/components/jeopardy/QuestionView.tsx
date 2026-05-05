@@ -172,20 +172,22 @@ export function QuestionView({
 
   const renderMedia = () => {
     if (question.mediaType === "none" || !question.mediaUrl) return null;
+    const src = resolvedMediaUrl;
+    if (!src) return null;
     if (question.mediaType === "image") {
       return (
         <img
-          src={question.mediaUrl}
+          src={src}
           alt="Question media"
           className="max-h-[40vh] mx-auto rounded-xl border-2 border-border shadow-glow"
         />
       );
     }
     if (question.mediaType === "audio") {
-      return <audio src={question.mediaUrl} controls className="w-full max-w-xl mx-auto" />;
+      return <audio src={src} controls className="w-full max-w-xl mx-auto" />;
     }
     if (question.mediaType === "video") {
-      const yt = youtubeEmbedUrl(question.mediaUrl);
+      const yt = youtubeEmbedUrl(src);
       if (yt) {
         return (
           <div className="aspect-video max-w-3xl mx-auto rounded-xl overflow-hidden border-2 border-border shadow-glow">
@@ -201,7 +203,7 @@ export function QuestionView({
       }
       return (
         <video
-          src={question.mediaUrl}
+          src={src}
           controls
           className="max-h-[40vh] mx-auto rounded-xl border-2 border-border shadow-glow"
         />
