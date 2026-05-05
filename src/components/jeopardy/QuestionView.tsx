@@ -57,7 +57,29 @@ export function QuestionView({
 }: Props) {
   const [revealed, setRevealed] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [resolvedMediaUrl, setResolvedMediaUrl] = useState<string | undefined>(
+    isMediaRef(question.mediaUrl) ? undefined : question.mediaUrl
+  );
   const timerRef = useRef<QuestionTimerHandle>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (isMediaRef(question.mediaUrl)) {
+      setResolvedMediaUrl(undefined);
+      getMedia(refToId(question.mediaUrl!))
+        .then((url) => {
+          if (!cancelled) setResolvedMediaUrl(url ?? undefined);
+        })
+        .catch(() => {
+          if (!cancelled) setResolvedMediaUrl(undefined);
+        });
+    } else {
+      setResolvedMediaUrl(question.mediaUrl);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [question.mediaUrl]);
 
   // Start question music immediately when question screen appears.
   // Stop ticking on unmount (music transition handled by parent / back).
