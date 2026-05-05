@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Pencil, Settings as SettingsIcon, Volume2, VolumeX, Check, Home, Play } from "lucide-react";
 import { sounds, setMasterVolume, setCustomSounds, playBackground, stopBackground } from "@/lib/sounds";
 import { toast } from "sonner";
+import { isMediaRef, getMedia, refToId, putMedia, idToRef, newMediaId } from "@/lib/mediaStorage";
 
 const DEFAULT_KEYBINDINGS = { correct: "y", wrong: "n", reveal: "Space" } as const;
 
