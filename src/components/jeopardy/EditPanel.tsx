@@ -84,11 +84,19 @@ export function EditPanel({
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => {
-      onUpdateQuestion(categoryId, questionId, {
-        mediaType: expectedType,
-        mediaUrl: reader.result as string,
-      });
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      const id = newMediaId();
+      try {
+        await putMedia(id, dataUrl);
+        onUpdateQuestion(categoryId, questionId, {
+          mediaType: expectedType,
+          mediaUrl: idToRef(id),
+        });
+      } catch (err) {
+        console.error("Media save failed", err);
+        toast.error("Failed to save media");
+      }
     };
     reader.readAsDataURL(file);
   };
