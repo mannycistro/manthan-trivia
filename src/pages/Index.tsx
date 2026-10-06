@@ -24,6 +24,7 @@ import {
 } from "@/lib/boardStorage";
 import { GameBoard } from "@/components/jeopardy/GameBoard";
 import { EditBoard } from "@/components/jeopardy/EditBoard";
+import { TileEditor } from "@/components/jeopardy/TileEditor";
 import { QuestionView } from "@/components/jeopardy/QuestionView";
 import { ScoreboardBar } from "@/components/jeopardy/ScoreboardBar";
 import { EditPanel } from "@/components/jeopardy/EditPanel";
@@ -110,6 +111,8 @@ const Index = ({ mode }: IndexProps) => {
   }, [state.settings.customSounds]);
 
   const activeRound = state.rounds[state.activeRoundIndex] ?? state.rounds[0];
+  const editCategory = activeRound?.categories.find((c) => c.id === editTarget?.categoryId);
+  const editQuestion = editCategory?.questions.find((q) => q.id === editTarget?.questionId);
 
   const activeCategory = activeTile
     ? activeRound?.categories.find((c) => c.id === activeTile.catId) ?? null
@@ -521,7 +524,10 @@ const Index = ({ mode }: IndexProps) => {
       </header>
 
       <main className="flex-1 min-h-0 flex flex-col pb-1">
-        {activeQuestion && activeCategory ? (
+        {!playMode && editCategory && editQuestion && !editOpen ? (
+          <TileEditor key={editQuestion.id} category={editCategory} question={editQuestion} currency={state.settings.currency}
+            onBack={() => setEditTarget(null)} onUpdate={(patch) => updateQuestion(editCategory.id, editQuestion.id, patch)} />
+        ) : activeQuestion && activeCategory ? (
           <div className="flex-1 min-h-0">
             <QuestionView
               category={activeCategory}
@@ -537,7 +543,6 @@ const Index = ({ mode }: IndexProps) => {
           <div className="animate-fade-in flex-1 min-h-0 h-full">
             {!playMode ? <EditBoard round={activeRound} rounds={state.rounds} settings={state.settings} onTileClick={(categoryId, questionId) => {
               setEditTarget({ categoryId, questionId });
-              setEditOpen(true);
             }} /> : <GameBoard
               round={activeRound}
               currency={state.settings.currency}
