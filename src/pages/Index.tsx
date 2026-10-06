@@ -73,6 +73,7 @@ const Index = ({ mode }: IndexProps) => {
   const boardIdRef = useRef(boardId);
   const [activeTile, setActiveTile] = useState<{ catId: string; qId: string } | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<{ categoryId: string; questionId: string } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(state.gameName);
@@ -501,7 +502,7 @@ const Index = ({ mode }: IndexProps) => {
               <Button variant="secondary" onClick={() => setSettingsOpen(true)} className="font-bold">
                 <SettingsIcon className="w-4 h-4 mr-2" /> Settings
               </Button>
-              <Button onClick={() => setEditOpen(true)} className="font-bold">
+              <Button onClick={() => { setEditTarget(null); setEditOpen(true); }} className="font-bold">
                 <Pencil className="w-4 h-4 mr-2" /> Edit Game
               </Button>
             </>
@@ -534,7 +535,10 @@ const Index = ({ mode }: IndexProps) => {
           </div>
         ) : activeRound ? (
           <div className="animate-fade-in flex-1 min-h-0 h-full">
-            {!playMode ? <EditBoard round={activeRound} settings={state.settings} onTileClick={() => setEditOpen(true)} /> : <GameBoard
+            {!playMode ? <EditBoard round={activeRound} settings={state.settings} onTileClick={(categoryId, questionId) => {
+              setEditTarget({ categoryId, questionId });
+              setEditOpen(true);
+            }} /> : <GameBoard
               round={activeRound}
               currency={state.settings.currency}
               onTileClick={onTileClick}
@@ -561,6 +565,7 @@ const Index = ({ mode }: IndexProps) => {
       {!playMode && activeRound && (
         <EditPanel
           open={editOpen}
+          target={editTarget}
           onOpenChange={setEditOpen}
           rounds={state.rounds}
           activeRoundIndex={state.activeRoundIndex}
