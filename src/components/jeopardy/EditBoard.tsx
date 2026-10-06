@@ -52,9 +52,9 @@ export function EditBoard({ round, rounds, settings, onTileClick }: Props) {
       gridTemplateRows: `minmax(0, 1.6fr) repeat(${round.rows}, minmax(0, 1fr))`,
     }}>
       <div aria-hidden="true" />
-      {round.categories.map((cat) => (
+      {round.categories.map((cat, index) => (
         <div key={cat.id} className="bg-accent text-accent-foreground rounded-lg p-1.5 md:p-2 flex items-center justify-center text-center shadow-tile overflow-hidden min-w-0 min-h-0 [container-type:size]">
-          <AutoFitText text={cat.title} className="font-category text-shadow-jeopardy" minFontSize={10}
+          <AutoFitText text={cat.title.trim() ? cat.title : `Category ${index + 1}`} className={`font-category text-shadow-jeopardy ${cat.title.trim() ? "" : "opacity-40"}`} minFontSize={10}
             maxFontSize={cat.titleFontSize ?? settings.categoryFontSize ?? 32}
             fontFamily={`'${cat.titleFontFamily ?? settings.categoryFontFamily ?? "Montserrat"}', system-ui, sans-serif`}
             refitKey={`${round.rows}x${round.cols}`} multiline />
@@ -72,6 +72,7 @@ export function EditBoard({ round, rounds, settings, onTileClick }: Props) {
             <div key={q.id} data-edit-tile={q.id}
               className="tile-gradient text-tile-foreground shadow-tile rounded-lg p-1 md:p-2 min-w-0 min-h-0 overflow-y-auto overscroll-contain [scrollbar-width:thin] hover:ring-2 hover:ring-primary transition-shadow"
               onClick={() => onTileClick(cat.id, q.id)}>
+              <div className="flex min-h-full flex-col items-center justify-center">
               <Button variant="ghost" onClick={(e) => { e.stopPropagation(); onTileClick(cat.id, q.id); }}
                 aria-label={`Edit ${cat.title || "category"} for ${q.value}`}
                 className="w-full h-auto min-h-8 p-1 whitespace-pre-wrap break-words font-display uppercase text-center text-sm leading-tight hover:bg-transparent hover:text-tile-foreground">
@@ -80,6 +81,7 @@ export function EditBoard({ round, rounds, settings, onTileClick }: Props) {
                   : <span className="opacity-40">{settings.currency}{q.value}</span>}
               </Button>
               {hasMedia && <EditMediaPreview question={q} />}
+              </div>
             </div>
           );
         }),
