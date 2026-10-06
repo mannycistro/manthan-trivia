@@ -1,6 +1,7 @@
-# Edit board tasks
-- [x] 1. Fixed-size edit tiles with lazy media and row values; compilation verified.
-- [x] 2. Show answers toggle; compilation verified.
-- [x] 3. Open and highlight the existing clue editor; compilation verified.
-- [x] 4. Current-round and all-round completion overview; compilation verified.
-- [x] 5. Edit-only empty category placeholders; compilation, screenshots, saved edits/media, export, and Play answer reveal verified.
+# Better tile editor
+- [ ] 1. Dedicated clue/response editor with Back and Escape; check build.
+- [ ] 2. Media selection, upload/drop/paste, previews, errors and removal; check build.
+- [ ] 3. Previous/Next in column order; check build.
+- [ ] 4. Saved status and immediate board updates; check build.
+- [ ] 5. Confirmed clue deletion with shared-file protection; check build.
+- [ ] 6. Category menu, reorder, rename, clear and fonts; check build and regression flow.
