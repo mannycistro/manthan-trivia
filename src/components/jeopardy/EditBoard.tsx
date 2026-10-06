@@ -8,17 +8,44 @@ import { Label } from "@/components/ui/label";
 
 interface Props {
   round: Round;
+  rounds: Round[];
   settings: GameSettings;
   onTileClick: (categoryId: string, questionId: string) => void;
 }
 
-export function EditBoard({ round, settings, onTileClick }: Props) {
+export function editBoardTotals(rounds: Round[]) {
+  const questions = rounds.flatMap((r) => r.categories.flatMap((c) => c.questions));
+  const withContent = (q: (typeof questions)[number]) => !!q.question.trim() || (q.mediaType !== "none" && !!q.mediaUrl);
+  return {
+    total: questions.length,
+    complete: questions.filter((q) => withContent(q) && !!q.answer.trim()).length,
+    empty: questions.filter((q) => !withContent(q)).length,
+    missingAnswer: questions.filter((q) => !q.answer.trim()).length,
+    media: questions.filter((q) => q.mediaType !== "none" && !!q.mediaUrl).length,
+  };
+}
+
+function Overview({ label, rounds }: { label: string; rounds: Round[] }) {
+  const counts = editBoardTotals(rounds);
+  return <p className="text-xs text-muted-foreground">
+    <span className="font-bold text-foreground">{label}</span>{" · "}
+    {counts.complete}/{counts.total} complete · {counts.empty} empty · {counts.missingAnswer} missing answer · {counts.media} with media
+  </p>;
+}
+
+export function EditBoard({ round, rounds, settings, onTileClick }: Props) {
   const [showAnswers, setShowAnswers] = useState(false);
   return (
     <div className="flex flex-col h-full min-h-0 gap-2">
-      <div className="flex items-center justify-end gap-2 shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div className="space-y-1" aria-label="Board completion overview">
+          <Overview label={round.name || "Current round"} rounds={[round]} />
+          <Overview label="All rounds" rounds={rounds} />
+        </div>
+        <div className="flex items-center gap-2">
         <Label htmlFor="edit-show-answers">Show answers</Label>
         <Switch id="edit-show-answers" checked={showAnswers} onCheckedChange={setShowAnswers} />
+        </div>
       </div>
     <div className="grid gap-1.5 md:gap-2 w-full h-full min-h-0" style={{
       gridTemplateColumns: `max-content repeat(${round.cols}, minmax(0, 1fr))`,

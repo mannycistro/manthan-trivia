@@ -535,7 +535,7 @@ const Index = ({ mode }: IndexProps) => {
           </div>
         ) : activeRound ? (
           <div className="animate-fade-in flex-1 min-h-0 h-full">
-            {!playMode ? <EditBoard round={activeRound} settings={state.settings} onTileClick={(categoryId, questionId) => {
+            {!playMode ? <EditBoard round={activeRound} rounds={state.rounds} settings={state.settings} onTileClick={(categoryId, questionId) => {
               setEditTarget({ categoryId, questionId });
               setEditOpen(true);
             }} /> : <GameBoard
