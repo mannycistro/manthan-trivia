@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Download, Upload, X } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { putMedia, newMediaId, idToRef, isMediaRef, deleteMedia, refToId } from "@/lib/mediaStorage";
 
@@ -36,6 +36,7 @@ const CATEGORY_FONT_OPTIONS = [
 
 interface Props {
   open: boolean;
+  target?: { categoryId: string; questionId: string } | null;
   onOpenChange: (open: boolean) => void;
   rounds: Round[];
   activeRoundIndex: number;
@@ -55,6 +56,7 @@ interface Props {
 
 export function EditPanel({
   open,
+  target,
   onOpenChange,
   rounds,
   activeRoundIndex,
@@ -72,6 +74,22 @@ export function EditPanel({
   onUpdateSettings,
 }: Props) {
   const importRef = useRef<HTMLInputElement>(null);
+  const [selectedCategory, setSelectedCategory] = useState(round.categories[0]?.id ?? "");
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open) setSelectedCategory(target?.categoryId ?? round.categories[0]?.id ?? "");
+  }, [open, target, round.id]);
+
+  useEffect(() => {
+    if (!open || !target || selectedCategory !== target.categoryId) return;
+    const timeout = window.setTimeout(() => {
+      const node = Array.from(contentRef.current?.querySelectorAll<HTMLElement>("[data-edit-question]") ?? [])
+        .find((el) => el.dataset.editQuestion === target.questionId);
+      node?.scrollIntoView({ block: "center", behavior: "instant" });
+    }, 100);
+    return () => window.clearTimeout(timeout);
+  }, [open, target, selectedCategory]);
 
   const handleMediaUpload = (
     categoryId: string,
@@ -119,7 +137,7 @@ export function EditPanel({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-card border-border">
+      <DialogContent ref={contentRef} className="max-w-5xl max-h-[90vh] overflow-y-auto bg-card border-border">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl text-primary">Edit Game</DialogTitle>
           <DialogDescription>
@@ -254,7 +272,7 @@ export function EditPanel({
           </p>
         </div>
 
-        <Tabs defaultValue={categories[0]?.id} key={round.id} className="w-full">
+        <Tabs value={selectedCategory} onValueChange={setSelectedCategory} key={round.id} className="w-full">
           <TabsList
             className="grid w-full"
             style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
@@ -373,7 +391,8 @@ export function EditPanel({
               {cat.questions.map((q) => (
                 <div
                   key={q.id}
-                  className="border-2 border-border rounded-xl p-4 space-y-3 bg-background/50"
+                  data-edit-question={q.id}
+                  className={`border-2 border-border rounded-xl p-4 space-y-3 bg-background/50 ${target?.questionId === q.id ? "ring-2 ring-primary" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-display text-2xl text-primary">
