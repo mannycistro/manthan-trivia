@@ -3,4 +3,4 @@
 - [x] 2. Show answers toggle; compilation verified.
 - [x] 3. Open and highlight the existing clue editor; compilation verified.
 - [x] 4. Current-round and all-round completion overview; compilation verified.
-- [ ] 5. Edit-only empty category placeholders; verify compilation and regression flows.
+- [x] 5. Edit-only empty category placeholders; compilation, screenshots, saved edits/media, export, and Play answer reveal verified.
