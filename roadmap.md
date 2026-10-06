@@ -1,5 +1,5 @@
 # Edit board tasks
-- [ ] 1. Fixed-size edit tiles with lazy media and row values; verify compilation.
+- [x] 1. Fixed-size edit tiles with lazy media and row values; compilation verified.
 - [ ] 2. Show answers toggle; verify compilation.
 - [ ] 3. Open and highlight the existing clue editor; verify compilation.
 - [ ] 4. Current-round and all-round completion overview; verify compilation.

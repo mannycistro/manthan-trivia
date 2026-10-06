@@ -2,6 +2,9 @@ import { Round, GameSettings } from "@/types/jeopardy";
 import { Button } from "@/components/ui/button";
 import { AutoFitText } from "./AutoFitText";
 import { EditMediaPreview } from "./EditMediaPreview";
+import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface Props {
   round: Round;
@@ -10,7 +13,13 @@ interface Props {
 }
 
 export function EditBoard({ round, settings, onTileClick }: Props) {
+  const [showAnswers, setShowAnswers] = useState(false);
   return (
+    <div className="flex flex-col h-full min-h-0 gap-2">
+      <div className="flex items-center justify-end gap-2 shrink-0">
+        <Label htmlFor="edit-show-answers">Show answers</Label>
+        <Switch id="edit-show-answers" checked={showAnswers} onCheckedChange={setShowAnswers} />
+      </div>
     <div className="grid gap-1.5 md:gap-2 w-full h-full min-h-0" style={{
       gridTemplateColumns: `max-content repeat(${round.cols}, minmax(0, 1fr))`,
       gridTemplateRows: `minmax(0, 1.6fr) repeat(${round.rows}, minmax(0, 1fr))`,
@@ -39,13 +48,16 @@ export function EditBoard({ round, settings, onTileClick }: Props) {
               <Button variant="ghost" onClick={(e) => { e.stopPropagation(); onTileClick(cat.id, q.id); }}
                 aria-label={`Edit ${cat.title || "category"} for ${q.value}`}
                 className="w-full h-auto min-h-8 p-1 whitespace-pre-wrap break-words font-display uppercase text-center text-sm leading-tight hover:bg-transparent hover:text-tile-foreground">
-                {q.question.trim() || hasMedia ? q.question : <span className="opacity-40">{settings.currency}{q.value}</span>}
+                {(showAnswers ? q.answer : q.question).trim() || (!showAnswers && hasMedia)
+                  ? (showAnswers ? q.answer : q.question)
+                  : <span className="opacity-40">{settings.currency}{q.value}</span>}
               </Button>
               {hasMedia && <EditMediaPreview question={q} />}
             </div>
           );
         }),
       ])}
+    </div>
     </div>
   );
 }
